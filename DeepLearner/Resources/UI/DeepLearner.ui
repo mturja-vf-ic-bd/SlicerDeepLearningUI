@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>GeomCNN</class>
+ <widget class="qMRMLWidget" name="GeomCNN">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>657</width>
+    <height>771</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>GeomCNN</string>
+  </property>
+  <layout class="QVBoxLayout" name="UserInputPane">
+   <item>
+    <widget class="ctkCollapsibleButton" name="inputsCollapsibleButton" native="true">
+     <property name="text" stdset="0">
+      <string>Input Directory</string>
+     </property>
+     <layout class="QFormLayout" name="InputDirPane">
+      <item row="0" column="0">
+       <widget class="QLineEdit" name="TrainDirLineEdit"/>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="TrainDirPushButton">
+        <property name="text">
+         <string>Load Training Data Directory</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="ctkCollapsibleButton" name="trainingCollapsibleButton" native="true">
+     <property name="text" stdset="0">
+      <string>Training Hyperparameters</string>
+     </property>
+     <layout class="QFormLayout" name="TrainingDirPane">
+      <item row="0" column="0">
+       <widget class="QLabel" name="maxEpochLabel">
+        <property name="text">
+         <string>Maximum Epoch</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="maxEpochLineEdit"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="learningRateLabel">
+        <property name="text">
+         <string>Learning Rate</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="learningRateLineEdit"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="batchSizeLabel">
+        <property name="text">
+         <string>Batch Size</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="batchSizeLineEdit"/>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="gPULabel">
+        <property name="text">
+         <string>GPU</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QCheckBox" name="gPUCheckBox"/>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLineEdit" name="writeDirLineEdit"/>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="writeDirLabel">
+        <property name="text">
+         <string>Output Directory</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="ctkCollapsibleButton" name="modelCollapsibleButton" native="true">
+     <property name="text" stdset="0">
+      <string>Model Selection</string>
+     </property>
+     <layout class="QGridLayout" name="modelParams">
+      <item row="0" column="0">
+       <widget class="QRadioButton" name="DenseNetRadio">
+        <property name="text">
+         <string>DenseNet</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QRadioButton" name="EfficientNetRadio">
+        <property name="text">
+         <string>EfficientNet</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QRadioButton" name="SimpleCNNRadio">
+        <property name="text">
+         <string>SimpleCNN</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QRadioButton" name="ResNetRadio">
+        <property name="text">
+         <string>ResNet</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QPushButton" name="StartTrain">
+       <property name="text">
+        <string>Start Trainer</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="ctkCollapsibleButton" name="modelCollapsibleButton" native="true">
+     <property name="text" stdset="0">
+      <string>Advanced Options</string>
+     </property>
+     <layout class="QVBoxLayout" name="AdvancedOptions">
+      <item>
+       <widget class="ctkCollapsibleButton" name="AdvanceCheckpointCollapsibleButton" native="true">
+        <property name="text" stdset="0">
+         <string>Checkpointing</string>
+        </property>
+        <layout class="QFormLayout" name="formLayout">
+         <item row="0" column="0">
+          <widget class="QLabel" name="every_n_epoch">
+           <property name="text">
+            <string>Checkpoint frequency in epochs</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="nEpoch"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="monitorLabel">
+           <property name="text">
+            <string>Monitor</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="monitorLineEdit"/>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="maxCpLabel">
+           <property name="text">
+            <string>Maximum checkpoints</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="maxCpLineEdit"/>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="ctkCollapsibleButton" name="AdvanceTrainingCollapsibleButton" native="true">
+        <property name="text" stdset="0">
+         <string>Training</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="ctkCollapsibleButton" name="AdvanceModelCollapsibleButton" native="true">
+        <property name="text" stdset="0">
+         <string>Logging</string>
+        </property>
+        <layout class="QFormLayout" name="LogPane">
+         <item row="0" column="0">
+          <widget class="QLabel" name="AddressLabel">
+           <property name="text">
+            <string>Tensorboard Address</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="tbAddressLineEdit"/>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="portLabel">
+           <property name="text">
+            <string>Tensorboard Port</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="tbPortLineEdit"/>
+         </item>
+         <item row="2" column="1">
+          <layout class="QHBoxLayout" name="logButtons">
+           <item>
+            <widget class="QPushButton" name="showLogPushButton">
+             <property name="text">
+              <string>Show Log</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ctkCollapsibleButton</class>
+   <extends>QWidget</extends>
+   <header>ctkCollapsibleButton.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>qMRMLWidget</class>
+   <extends>QWidget</extends>
+   <header>qMRMLWidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
