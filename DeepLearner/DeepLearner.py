@@ -5,7 +5,7 @@ import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 from pathlib import Path
-
+from src.CONSTANTS import FILE_PATHS
 
 #
 # DeepLearner
@@ -267,6 +267,9 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         else:
             self.model = "cnn"
 
+    def populateDataDirectory(self):
+        FILE_PATHS["TRAIN_DATA_DIR"] = self.ui.TrainDirLineEdit.text
+
     def onApplyButton(self):
         """
         Run processing when user clicks "Apply" button.
@@ -282,7 +285,7 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 "gpus": 0,
                 "model": self.model,
                 "logdir": os.path.join(self.ui.writeDirLineEdit.text, "tb_logs"),
-                "n_folds": 2,
+                "n_folds": 1,
                 "data_workers": 1,
                 "write_dir": self.ui.writeDirLineEdit.text,
                 "exp_name": "default",
@@ -290,6 +293,7 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 "maxCp": int(self.ui.maxCpLineEdit.text),
                 "monitor": self.ui.monitorLineEdit.text
             }
+            self.populateDataDirectory()
             self.logic.process(args)
 
         except Exception as e:

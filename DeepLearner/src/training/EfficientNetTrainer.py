@@ -42,13 +42,15 @@ def cli_main(args):
     # -----------
     # Data
     # -----------
-    # data_module = GeomCnnDataModule(batch_size=args.batch_size, num_workers=args.data_workers)
-    data_module_generator = GeomCnnDataModuleKFold(
-        batch_size=args["batch_size"],
-        num_workers=args["data_workers"],
-        n_splits=args["n_folds"]
-    )
-    data_modules = data_module_generator.get_folds()
+    if args["n_folds"] == 1:
+        data_modules = [GeomCnnDataModule(batch_size=args["batch_size"], num_workers=args["data_workers"])]
+    else:
+        data_module_generator = GeomCnnDataModuleKFold(
+            batch_size=args["batch_size"],
+            num_workers=args["data_workers"],
+            n_splits=args["n_folds"]
+        )
+        data_modules = data_module_generator.get_folds()
 
     for i in range(args["n_folds"]):
         # logger
