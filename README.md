@@ -1,2 +1,2 @@
 # SlicerDeepLearningUI
-![deep learning module ui image]()
+![deep learning module ui image](screenshot.png)
