@@ -26,4 +26,4 @@ torch==1.9.0
 torchmetrics==0.6.0
 ```
 ## UI Screenshot
-![deep learning module ui image](screenshot1.png)
+![deep learning module ui image](screenshot3.png)
