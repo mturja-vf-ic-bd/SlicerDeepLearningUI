@@ -12,7 +12,18 @@ root_data_folder
                      | ---- left_<feature_name>_flat.jpeg
                      | ---- right_<feature_name>_flat.jpeg
 ```
-Example:
-![data organization demo] (screenshot2.png)
+So for each subject, there can be data for multiple timestamps and multiple feature set. The user can choose to train the model for a particular timestamp and a particular feature set. The jpeg images are 2D images for left and right hemisphere of the brain. The shape of the images must match across hemisphere and population.
+#### Example:
+![data organization demo](screenshot2.png)
+## Environment Setup
+Install the following libraries using `pip` in Slicer-Python environment
+```
+monai==0.7.0
+numpy==1.19.2
+pytorch_lightning==1.4.9
+pandas==1.1.5
+torch==1.9.0
+torchmetrics==0.6.0
+```
 ## UI Screenshot
 ![deep learning module ui image](screenshot1.png)
