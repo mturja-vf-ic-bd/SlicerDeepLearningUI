@@ -10,6 +10,24 @@ from src.pl_modules.classifier_modules import ImageClassifier
 from src.data_utils.GeomCnnDataset import GeomCnnDataModule, GeomCnnDataModuleKFold
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
+from pytorch_lightning.callbacks.progress import ProgressBar
+
+
+class LitProgressBar(ProgressBar):
+
+    def __init__(self, qtProgressBarObject):
+        super().__init__()  # don't forget this :)
+        self.enable = True
+        self.qtProgressBarObject = qtProgressBarObject
+
+    def disable(self):
+        self.enable = False
+
+    def on_train_epoch_start(self, trainer, pl_module):
+        super().on_train_epoch_start(trainer, pl_module)  # don't forget this :)
+        percent = int((self.current_epoch / self.max_epochs) * 100)
+        self.qtProgressBarObject.setValue(percent)
+        print("progress: {}", percent)
 
 
 def cli_main(args):
@@ -63,6 +81,7 @@ def cli_main(args):
             monitor='validation/valid_loss',
             patience=30
         )
+        progressBar = LitProgressBar(args["qtProgressBarObject"])
         checkpointer = ModelCheckpoint(
             monitor=args["monitor"],
             save_top_k=args["maxCp"], verbose=True, save_last=False,
@@ -76,7 +95,7 @@ def cli_main(args):
                              log_every_n_steps=5,
                              num_sanity_val_steps=0,
                              logger=logger,
-                             callbacks=[es, checkpointer])
+                             callbacks=[es, checkpointer, progressBar])
         trainer.fit(model, datamodule=data_modules[i])
 
 #

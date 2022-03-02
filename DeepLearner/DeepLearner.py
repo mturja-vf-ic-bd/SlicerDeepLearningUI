@@ -80,6 +80,9 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.addObserver(slicer.mrmlScene, slicer.mrmlScene.EndCloseEvent, self.onSceneEndClose)
 
         # Initialize training hyperparameters with default values
+        self.ui.FeatureNameLineEdit.text = "eacsf"
+        self.ui.TimePointLineEdit.text = "V06"
+        self.ui.CVFoldLineEdit.text = "1"
         self.ui.maxEpochLineEdit.text = "10"
         self.ui.batchSizeLineEdit.text = "2"
         self.ui.learningRateLineEdit.text = "1e-3"
@@ -269,6 +272,9 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     def populateDataDirectory(self):
         FILE_PATHS["TRAIN_DATA_DIR"] = self.ui.TrainDirLineEdit.text
+        FILE_PATHS["FEATURE_DIRS"] = [self.ui.FeatureNameLineEdit.text]
+        FILE_PATHS["TIME_POINTS"] = [self.ui.TimePointLineEdit.text]
+        print("Data paths: \n", FILE_PATHS)
 
     def onApplyButton(self):
         """
@@ -285,16 +291,18 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 "gpus": 0,
                 "model": self.model,
                 "logdir": os.path.join(self.ui.writeDirLineEdit.text, "tb_logs"),
-                "n_folds": 1,
+                "n_folds": int(self.ui.CVFoldLineEdit.text),
                 "data_workers": 1,
                 "write_dir": self.ui.writeDirLineEdit.text,
                 "exp_name": "default",
                 "cp_n_epoch": int(self.ui.nEpoch.text),
                 "maxCp": int(self.ui.maxCpLineEdit.text),
-                "monitor": self.ui.monitorLineEdit.text
+                "monitor": self.ui.monitorLineEdit.text,
+                "qtProgressBarObject": self.ui.trainingProgressBar
             }
             self.populateDataDirectory()
             self.logic.process(args)
+            self.ui.trainingProgressBar.setValue(100)
 
         except Exception as e:
             slicer.util.errorDisplay("Failed to compute results: " + str(e))
