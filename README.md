@@ -12,7 +12,7 @@ root_data_folder
                      | ---- left_<feature_name>_flat.jpeg
                      | ---- right_<feature_name>_flat.jpeg
 ```
-So for each subject, there can be data for multiple timestamps and multiple feature set. The user can choose to train the model for a particular timestamp and a particular feature set. The jpeg images are 2D images for left and right hemisphere of the brain. The shape of the images must match across hemisphere and population.
+So for each subject, there can be data for multiple timestamps and multiple feature set. The user can choose to train the model for a particular timestamp and a particular feature set. For example, in the following example, each subject has features at two time points -- 6 months (V06) and 12 months (V12). For each of these time points the subject has 3 feature sets -- cortical thickness (thickness), surface area (sa), and, local ea-csf (eacsf). The jpeg images are 2D images for left and right hemisphere of the brain. The shape of the images must match across hemisphere and population.
 #### Example:
 ![data organization demo](screenshot2.png)
 ## Environment Setup
@@ -25,5 +25,16 @@ pandas==1.1.5
 torch==1.9.0
 torchmetrics==0.6.0
 ```
-## UI Screenshot
+## Steps to follow
+1. Load training data directory into the module
+2. Select feature and timepoint for which to train
+3. Change hyperparamters as needed
+4. Select model from 4 choices. All these models are taken from [MONAI](https://docs.monai.io/en/stable/networks.html#):
+   - [DenseNet](https://arxiv.org/pdf/1608.06993.pdf)
+   - [EfficientNet](https://arxiv.org/pdf/1905.11946.pdf)
+   - [SimpleCNN](https://github.com/mturja-vf-ic-bd/SlicerDeepLearningUI/blob/main/DeepLearner/src/models/cnn_model.py)
+   - [ResNet](https://arxiv.org/pdf/1512.03385.pdf)
+5. Change advance options if necessary.
+6. After training, check the Output Directory for saved models and tensorboard logs.
 ![deep learning module ui image](screenshot3.png)
+      
