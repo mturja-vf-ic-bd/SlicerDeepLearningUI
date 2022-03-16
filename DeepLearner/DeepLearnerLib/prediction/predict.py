@@ -2,9 +2,9 @@ import pytorch_lightning as pl
 import torch
 import torchmetrics
 
-from src.data_utils.GeomCnnDataset import GeomCnnDataModule
-from src.data_utils.utils import get_test_dataloader
-from src.pl_modules.classifier_modules import ImageClassifier
+from DeepLearnerLib.data_utils.GeomCnnDataset import GeomCnnDataModule
+from DeepLearnerLib.data_utils.utils import get_test_dataloader
+from DeepLearnerLib.pl_modules.classifier_modules import ImageClassifier
 
 
 def predict(pred_dataloader, model_ckpt):

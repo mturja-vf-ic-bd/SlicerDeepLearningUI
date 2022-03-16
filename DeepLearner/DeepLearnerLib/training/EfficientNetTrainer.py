@@ -1,13 +1,39 @@
 import os.path
-from argparse import ArgumentParser
+import slicer
 
-import pytorch_lightning as pl
+try:
+    import pytorch_lightning as pl
+except ImportError:
+    slicer.util.pip_install('pytorch_lightning==1.4.9')
+    import pytorch_lightning as pl
+
+try:
+    import torch
+except ImportError:
+    slicer.util.pip_install('torch==1.9.0')
+    import torch
+
+try:
+    import monai
+except ImportError:
+    slicer.util.pip_install('monai==0.7.0')
+
+try:
+    import pandas
+except ImportError:
+    slicer.util.pip_install('pandas==1.1.5')
+
+try:
+    import torchmetrics
+except ImportError:
+    slicer.util.pip_install('torchmetrics==0.6.0')
+
 import torch.nn
 from monai.networks.nets import EfficientNetBN, DenseNet121, DenseNet
 
-from src.models.cnn_model import SimpleCNN
-from src.pl_modules.classifier_modules import ImageClassifier
-from src.data_utils.GeomCnnDataset import GeomCnnDataModule, GeomCnnDataModuleKFold
+from DeepLearnerLib.models.cnn_model import SimpleCNN
+from DeepLearnerLib.pl_modules.classifier_modules import ImageClassifier
+from DeepLearnerLib.data_utils.GeomCnnDataset import GeomCnnDataModule, GeomCnnDataModuleKFold
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.callbacks.progress import ProgressBar
@@ -24,7 +50,7 @@ class LitProgressBar(ProgressBar):
         self.enable = False
 
     def on_train_epoch_start(self, trainer, pl_module):
-        super().on_train_epoch_start(trainer, pl_module)  # don't forget this :)
+        super().on_train_epoch_start(trainer, pl_module)
         percent = int((self.current_epoch / self.max_epochs) * 100)
         self.qtProgressBarObject.setValue(percent)
         print("progress: {}", percent)
@@ -81,7 +107,7 @@ def cli_main(args):
             monitor='validation/valid_loss',
             patience=30
         )
-        progressBar = LitProgressBar(args["qtProgressBarObject"])
+        # progressBar = LitProgressBar(args["qtProgressBarObject"])
         checkpointer = ModelCheckpoint(
             monitor=args["monitor"],
             save_top_k=args["maxCp"], verbose=True, save_last=False,
@@ -95,7 +121,7 @@ def cli_main(args):
                              log_every_n_steps=5,
                              num_sanity_val_steps=0,
                              logger=logger,
-                             callbacks=[es, checkpointer, progressBar])
+                             callbacks=[es, checkpointer])
         trainer.fit(model, datamodule=data_modules[i])
 
 #

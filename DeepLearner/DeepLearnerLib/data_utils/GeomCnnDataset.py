@@ -18,8 +18,8 @@ from monai.transforms import (
     EnsureType,
 )
 
-from src.data_utils.utils import get_image_files_3
-from src.data_utils.CustomDataset import GeomCnnDataset
+from DeepLearnerLib.data_utils.utils import get_image_files_3
+from DeepLearnerLib.data_utils.CustomDataset import GeomCnnDataset
 from sklearn.model_selection import train_test_split
 
 

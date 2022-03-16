@@ -3,8 +3,8 @@ import pandas as pd
 import torch.utils.data
 from monai.transforms import LoadImage, AddChannel, ScaleIntensity, EnsureType, Compose
 
-from src.CONSTANTS import FILE_PATHS
-from src.data_utils.CustomDataset import GeomCnnDataset
+from DeepLearnerLib.CONSTANTS import FILE_PATHS
+from DeepLearnerLib.data_utils.CustomDataset import GeomCnnDataset
 
 
 def get_image_files(data_dir="TRAIN_DATA_DIR"):

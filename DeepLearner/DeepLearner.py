@@ -5,12 +5,11 @@ import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 from pathlib import Path
-from src.CONSTANTS import FILE_PATHS
+from DeepLearnerLib.CONSTANTS import FILE_PATHS
 
 #
-# DeepLearner
+# DeepLearnerLib
 #
-from src.training.EfficientNetTrainer import cli_main
 
 
 class DeepLearner(ScriptedLoadableModule):
@@ -20,13 +19,14 @@ class DeepLearner(ScriptedLoadableModule):
 
     def __init__(self, parent):
         ScriptedLoadableModule.__init__(self, parent)
-        self.parent.title = "DeepLearner"  # TODO: make this more human readable by adding spaces
+        self.parent.title = "DeepLearnerLib"  # TODO: make this more human readable by adding spaces
         self.parent.categories = [
             "Deep Learning"]  # TODO: set categories (folders where the module shows up in the module selector)
         self.parent.dependencies = []  # TODO: add here list of module names that this module requires
         self.parent.contributors = ["Md Asadullah Turja (UNC Chapel Hill)"]
         # TODO: update with short description of the module and a link to online module documentation
-        self.parent.helpText = """"""
+        self.parent.helpText = """This module enables the user to easily train complex deep learning models 
+        (such as ResNet, EfficientNet, CNN, etc.) without the need for any coding. Read more: https://github.com/mturja-vf-ic-bd/SlicerDeepLearningUI"""
         # TODO: replace with organization, grant and thanks
         self.parent.acknowledgementText = """dummy"""
 
@@ -59,7 +59,7 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         # Load widget from .ui file (created by Qt Designer).
         # Additional widgets can be instantiated manually and added to self.layout.
-        uiWidget = slicer.util.loadUI(self.resourcePath('UI/DeepLearner.ui'))
+        uiWidget = slicer.util.loadUI(self.resourcePath('UI/DeepLearnerLib.ui'))
         self.layout.addWidget(uiWidget)
         self.ui = slicer.util.childWidgetVariables(uiWidget)
 
@@ -80,17 +80,17 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.addObserver(slicer.mrmlScene, slicer.mrmlScene.EndCloseEvent, self.onSceneEndClose)
 
         # Initialize training hyperparameters with default values
-        self.ui.FeatureNameLineEdit.text = "eacsf"
-        self.ui.TimePointLineEdit.text = "V06"
-        self.ui.CVFoldLineEdit.text = "1"
-        self.ui.maxEpochLineEdit.text = "10"
-        self.ui.batchSizeLineEdit.text = "2"
-        self.ui.learningRateLineEdit.text = "1e-3"
+        self.ui.FeatureNameLineEdit.text = ""
+        self.ui.TimePointLineEdit.text = ""
+        self.ui.CVFoldLineEdit.text = "5"
+        self.ui.maxEpochLineEdit.text = ""
+        self.ui.batchSizeLineEdit.text = ""
+        self.ui.learningRateLineEdit.text = ""
         self.ui.writeDirLineEdit.text = os.path.join(Path.home(), "defaultExperiment")
         self.ui.tbPortLineEdit.text = "6010"
         self.ui.tbAddressLineEdit.text = "localhost"
-        self.ui.nEpoch.text = "5"
-        self.ui.maxCpLineEdit.text = "2"
+        self.ui.nEpoch.text = ""
+        self.ui.maxCpLineEdit.text = ""
         self.ui.monitorLineEdit.text = "validation/valid_loss"
 
         # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
@@ -168,7 +168,7 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         #   firstVolumeNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLScalarVolumeNode")
         #   if firstVolumeNode:
         #     self._parameterNode.SetNodeReferenceID("InputVolume", firstVolumeNode.GetID())
-        return 0
+        pass
 
     def setParameterNode(self, inputParameterNode):
         """
@@ -282,26 +282,22 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """
         try:
             # Compute output
-            args = {
-                "batch_size": int(self.ui.batchSizeLineEdit.text),
-                "learning_rate": float(self.ui.learningRateLineEdit.text),
-                "in_channels": 2,
-                "num_classes": 2,
-                "max_epochs": int(self.ui.maxEpochLineEdit.text),
-                "gpus": 0,
-                "model": self.model,
-                "logdir": os.path.join(self.ui.writeDirLineEdit.text, "tb_logs"),
-                "n_folds": int(self.ui.CVFoldLineEdit.text),
-                "data_workers": 1,
-                "write_dir": self.ui.writeDirLineEdit.text,
-                "exp_name": "default",
-                "cp_n_epoch": int(self.ui.nEpoch.text),
-                "maxCp": int(self.ui.maxCpLineEdit.text),
-                "monitor": self.ui.monitorLineEdit.text,
-                "qtProgressBarObject": self.ui.trainingProgressBar
-            }
             self.populateDataDirectory()
-            self.logic.process(args)
+            self.logic.process(
+                in_channels=2,
+                num_classes=2,
+                model_name=self.model,
+                batch_size=int(self.ui.batchSizeLineEdit.text),
+                learning_rate=float(self.ui.learningRateLineEdit.text),
+                max_epochs=int(self.ui.maxEpochLineEdit.text),
+                n_folds=int(self.ui.CVFoldLineEdit.text),
+                gpus=0,
+                logdir=self.ui.writeDirLineEdit.text,
+                exp_name="default",
+                cp_n_epoch=int(self.ui.nEpoch.text),
+                max_cp=int(self.ui.maxCpLineEdit.text),
+                monitor=self.ui.monitorLineEdit.text
+            )
             self.ui.trainingProgressBar.setValue(100)
 
         except Exception as e:
@@ -367,13 +363,62 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
         if not parameterNode.GetParameter("Invert"):
             parameterNode.SetParameter("Invert", "false")
 
-    def process(self, args):
+    def process(
+            self,
+            in_channels,
+            num_classes,
+            model_name,
+            batch_size,
+            learning_rate,
+            max_epochs,
+            n_folds,
+            gpus,
+            logdir,
+            exp_name="default",
+            cp_n_epoch=1,
+            max_cp=-1,
+            monitor="validation/valid_loss",
+            progressbar=None
+        ):
         """
         Run the processing algorithm.
         Can be used without GUI widget.
-        """
 
+        :param int in_channels: Number of input channels in the images (For example, it should be 3 for RGB images)
+        :param int num_classes: Number of classes that exist in the dataset
+        :param str model_name: The string for the model which will be trained
+        :param int batch_size: Number of training samples in each batch while training
+        :param float learning_rate: learning rate for the training
+        :param int max_epochs: Maximum number of epochs the model will be trained.
+        :param int n_folds: Number of cross-validation folds
+        :param int gpus: whether to train on gpu or cpu (0 for cpu and 1 for gpu)
+        :param str logdir: Directory where all the outputs will be saved (like checkpoints and tensorboard logs)
+        :param str exp_name: Name of the experiment. A new folder named `exp_name` will be created inside the `logdir`
+        for each experiment.
+        :param int cp_n_epoch: A new checkpoint will be saved every `cp_n_epoch`
+        :param max_cp: The best `max_cp` checkpoints will be kept (Use -1 to keep them all).
+        :param monitor: The value based on which the quality of checkpoint will be assessed.
+        :param progressbar: A progress bar object that will be updated during training
+        """
+        args = {
+            "batch_size": batch_size,
+            "learning_rate": learning_rate,
+            "in_channels": in_channels,
+            "num_classes": num_classes,
+            "max_epochs": max_epochs,
+            "gpus": gpus,
+            "model": model_name,
+            "n_folds": n_folds,
+            "data_workers": 1,
+            "write_dir": logdir,
+            "exp_name": exp_name,
+            "cp_n_epoch": cp_n_epoch,
+            "maxCp": max_cp,
+            "monitor": monitor,
+            "qtProgressBarObject": progressbar
+        }
         import time
+        from DeepLearnerLib.training.EfficientNetTrainer import cli_main
         startTime = time.time()
         logging.info('Processing started ... ')
         logging.info(args)
