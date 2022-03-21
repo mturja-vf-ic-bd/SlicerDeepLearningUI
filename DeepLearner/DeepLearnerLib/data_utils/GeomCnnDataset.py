@@ -18,7 +18,7 @@ from monai.transforms import (
     EnsureType,
 )
 
-from DeepLearnerLib.data_utils.utils import get_image_files_3
+from DeepLearnerLib.data_utils.utils import get_image_files_3, get_image_files_single_scalar
 from DeepLearnerLib.data_utils.CustomDataset import GeomCnnDataset
 from sklearn.model_selection import train_test_split
 
@@ -28,11 +28,13 @@ class GeomCnnDataModule(pl.LightningDataModule):
                  batch_size: int = -1,
                  val_frac: float = 0.2,
                  num_workers=4,
-                 data_tuple=None):
+                 data_tuple=None,
+                 file_paths=None):
         super(GeomCnnDataModule, self).__init__()
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.val_frac = val_frac
+        self.FILE_PATHS = file_paths
         self.train_transforms = Compose(
             [
                 LoadImage(image_only=True),
@@ -57,7 +59,7 @@ class GeomCnnDataModule(pl.LightningDataModule):
         print("Setting up data loaders ...")
         # Assign train/val datasets for use in dataloaders
         if stage in (None, "fit"):
-            train_files, train_labels = get_image_files_3("TRAIN_DATA_DIR")
+            train_files, train_labels = get_image_files_single_scalar("TRAIN_DATA_DIR", self.FILE_PATHS)
             length = len(train_files)
             if self.batch_size == -1:
                 self.batch_size = length
@@ -77,7 +79,7 @@ class GeomCnnDataModule(pl.LightningDataModule):
 
         # Assign test dataset for use in dataloader(s)
         if stage in (None, "test"):
-            test_files, test_labels = get_image_files_3("TEST_DATA_DIR")
+            test_files, test_labels = get_image_files_single_scalar("TEST_DATA_DIR", self.FILE_PATHS)
             self.test_ds = GeomCnnDataset(test_files, test_labels, self.test_transform)
         print("Finished loading !!!")
 
@@ -95,15 +97,17 @@ class GeomCnnDataModuleKFold:
     def __init__(self,
                  batch_size,
                  num_workers,
-                 n_splits=2):
+                 n_splits=2,
+                 file_paths=None):
         super(GeomCnnDataModuleKFold, self).__init__()
         self.batch_size = batch_size
         self.n_splits = n_splits
         self.num_workers = num_workers
+        self.FILE_PATHS = file_paths
         self.datamodules = self.split_data()
 
     def split_data(self):
-        train_files, train_labels = get_image_files_3("TRAIN_DATA_DIR")
+        train_files, train_labels = get_image_files_single_scalar("TRAIN_DATA_DIR", self.FILE_PATHS)
         skf = StratifiedKFold(n_splits=self.n_splits)
         datamodule_list = []
         for train_index, val_index in skf.split(train_files, train_labels):

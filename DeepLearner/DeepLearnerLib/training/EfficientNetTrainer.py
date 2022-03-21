@@ -53,7 +53,6 @@ class LitProgressBar(ProgressBar):
         super().on_train_epoch_start(trainer, pl_module)
         percent = int((self.current_epoch / self.max_epochs) * 100)
         self.qtProgressBarObject.setValue(percent)
-        print("progress: {}", percent)
 
 
 def cli_main(args):
@@ -77,7 +76,8 @@ def cli_main(args):
         )
     else:
         backbone = SimpleCNN()
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device = "cuda:0" if torch.cuda.is_available() and args["use_gpu"] else "cpu"
+    print(f"Using device: {device}")
     model = ImageClassifier(backbone, learning_rate=args["learning_rate"],
                             criterion=torch.nn.CrossEntropyLoss(weight=torch.FloatTensor([1.0, 5.0])),
                             device=device,
@@ -87,12 +87,13 @@ def cli_main(args):
     # Data
     # -----------
     if args["n_folds"] == 1:
-        data_modules = [GeomCnnDataModule(batch_size=args["batch_size"], num_workers=args["data_workers"])]
+        data_modules = [GeomCnnDataModule(batch_size=args["batch_size"], num_workers=args["data_workers"], file_paths=args["file_paths"])]
     else:
         data_module_generator = GeomCnnDataModuleKFold(
             batch_size=args["batch_size"],
             num_workers=args["data_workers"],
-            n_splits=args["n_folds"]
+            n_splits=args["n_folds"],
+            file_paths=args["file_paths"]
         )
         data_modules = data_module_generator.get_folds()
 
@@ -117,7 +118,7 @@ def cli_main(args):
         # training
         # ------------
         trainer = pl.Trainer(max_epochs=args["max_epochs"],
-                             gpus=args["gpus"],
+                             gpus=0 if device == "cpu" else 1,
                              log_every_n_steps=5,
                              num_sanity_val_steps=0,
                              logger=logger,

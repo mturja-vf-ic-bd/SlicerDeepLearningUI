@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>657</width>
-    <height>824</height>
+    <height>870</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,9 +20,6 @@
       <string>Input Directory</string>
      </property>
      <layout class="QFormLayout" name="formLayout_3">
-      <item row="4" column="1">
-       <widget class="QLineEdit" name="FeatureNameLineEdit"/>
-      </item>
       <item row="4" column="0">
        <widget class="QLabel" name="label">
         <property name="text">
@@ -37,19 +34,6 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="1">
-       <widget class="QLineEdit" name="TimePointLineEdit"/>
-      </item>
-      <item row="6" column="0">
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>Cross Validation Fold Count</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="1">
-       <widget class="QLineEdit" name="CVFoldLineEdit"/>
-      </item>
       <item row="3" column="1">
        <widget class="QPushButton" name="TrainDirPushButton">
         <property name="text">
@@ -59,6 +43,12 @@
       </item>
       <item row="2" column="1">
        <widget class="QLineEdit" name="TrainDirLineEdit"/>
+      </item>
+      <item row="4" column="1">
+       <widget class="QComboBox" name="FeatureNameCombo"/>
+      </item>
+      <item row="5" column="1">
+       <widget class="QComboBox" name="TimePointCombo"/>
       </item>
      </layout>
     </widget>
@@ -76,48 +66,91 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="maxEpochLineEdit"/>
-      </item>
-      <item row="1" column="0">
+      <item row="2" column="0">
        <widget class="QLabel" name="learningRateLabel">
         <property name="text">
          <string>Learning Rate</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="learningRateLineEdit"/>
-      </item>
-      <item row="2" column="0">
+      <item row="3" column="0">
        <widget class="QLabel" name="batchSizeLabel">
         <property name="text">
          <string>Batch Size</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
-       <widget class="QLineEdit" name="batchSizeLineEdit"/>
-      </item>
-      <item row="3" column="0">
+      <item row="7" column="0">
        <widget class="QLabel" name="writeDirLabel">
         <property name="text">
          <string>Output Directory</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
+      <item row="7" column="1">
        <widget class="QLineEdit" name="writeDirLineEdit"/>
       </item>
-      <item row="4" column="0">
+      <item row="8" column="0">
        <widget class="QLabel" name="gPULabel">
         <property name="text">
          <string>GPU</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="1">
+      <item row="8" column="1">
        <widget class="QCheckBox" name="gPUCheckBox"/>
+      </item>
+      <item row="0" column="1">
+       <widget class="QSpinBox" name="epochSpinBox">
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QDoubleSpinBox" name="learningRateSpinBox">
+        <property name="decimals">
+         <number>5</number>
+        </property>
+        <property name="minimum">
+         <double>0.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000100000000000</double>
+        </property>
+        <property name="value">
+         <double>0.000100000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QSpinBox" name="batchSizeSpinBox">
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>4096</number>
+        </property>
+        <property name="value">
+         <number>32</number>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QLineEdit" name="CVFoldLineEdit"/>
+      </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Cross Validation Fold Count</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -196,9 +229,6 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="1">
-          <widget class="QLineEdit" name="nEpoch"/>
-         </item>
          <item row="2" column="0">
           <widget class="QLabel" name="monitorLabel">
            <property name="text">
@@ -216,8 +246,25 @@
            </property>
           </widget>
          </item>
+         <item row="0" column="1">
+          <widget class="QSpinBox" name="cpFreqSpinBox">
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>1000</number>
+           </property>
+          </widget>
+         </item>
          <item row="1" column="1">
-          <widget class="QLineEdit" name="maxCpLineEdit"/>
+          <widget class="QSpinBox" name="maxCpSpinBox">
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>10000</number>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>

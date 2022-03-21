@@ -20,6 +20,7 @@ include(${Slicer_USE_FILE})
 #-----------------------------------------------------------------------------
 # Extension modules
 add_subdirectory(DeepLearner)
+add_subdirectory(Deep)
 ## NEXT_MODULE
 
 #-----------------------------------------------------------------------------

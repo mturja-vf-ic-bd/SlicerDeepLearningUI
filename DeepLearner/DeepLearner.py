@@ -5,7 +5,7 @@ import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 from pathlib import Path
-from DeepLearnerLib.CONSTANTS import FILE_PATHS
+from DeepLearnerLib.CONSTANTS import DEFAULT_FILE_PATHS
 
 #
 # DeepLearnerLib
@@ -80,26 +80,24 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.addObserver(slicer.mrmlScene, slicer.mrmlScene.EndCloseEvent, self.onSceneEndClose)
 
         # Initialize training hyperparameters with default values
-        self.ui.FeatureNameLineEdit.text = ""
-        self.ui.TimePointLineEdit.text = ""
+        # self.ui.FeatureNameLineEdit.text = ""
+        # self.ui.TimePointLineEdit.text = ""
         self.ui.CVFoldLineEdit.text = "5"
-        self.ui.maxEpochLineEdit.text = ""
-        self.ui.batchSizeLineEdit.text = ""
-        self.ui.learningRateLineEdit.text = ""
+        # self.ui.epochSpinBox.text = ""
+        # self.ui.batchSizeLineEdit.text = ""
+        # self.ui.learningRateSpinBox.text = ""
         self.ui.writeDirLineEdit.text = os.path.join(Path.home(), "defaultExperiment")
         self.ui.tbPortLineEdit.text = "6010"
         self.ui.tbAddressLineEdit.text = "localhost"
-        self.ui.nEpoch.text = ""
-        self.ui.maxCpLineEdit.text = ""
         self.ui.monitorLineEdit.text = "validation/valid_loss"
 
         # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
         # (in the selected parameter node).
-        self.ui.TrainDirLineEdit.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
-        self.ui.maxEpochLineEdit.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+        self.ui.TrainDirLineEdit.connect("textChanged(str)", self.updateParameterNodeFromGUI)
+        self.ui.epochSpinBox.connect("textChanged(str)", self.updateParameterNodeFromGUI)
         self.ui.gPUCheckBox.connect("toggled(bool)", self.updateParameterNodeFromGUI)
-        self.ui.batchSizeLineEdit.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
-        self.ui.learningRateLineEdit.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+        self.ui.batchSizeSpinBox.connect("textChanged(str)", self.updateParameterNodeFromGUI)
+        self.ui.learningRateSpinBox.connect("textChanged(str)", self.updateParameterNodeFromGUI)
 
         # Buttons
         self.ui.TrainDirPushButton.connect('clicked(bool)', self.populateTrainDirectory)
@@ -253,6 +251,23 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             if mode == "train":
                 self.trainDir = directoryPath[0]
                 self.ui.TrainDirLineEdit.text = directoryPath[0]
+                feat_set = set()
+                timepoints = set()
+                for sub in os.listdir(self.trainDir):
+                    if not os.path.isdir(os.path.join(self.trainDir, sub)):
+                        continue
+                    for tp in os.listdir(os.path.join(self.trainDir, sub)):
+                        if not os.path.isdir(os.path.join(self.trainDir, sub, tp)):
+                            continue
+                        timepoints.add(tp)
+                        for feat in os.listdir(os.path.join(self.trainDir, sub, tp)):
+                            if not os.path.isdir(os.path.join(self.trainDir, sub, tp, feat)):
+                                continue
+                            feat_set.add(feat)
+                for f in feat_set:
+                    self.ui.FeatureNameCombo.addItem(f)
+                for tp in timepoints:
+                    self.ui.TimePointCombo.addItem(tp)
 
     def populateTrainDirectory(self):
         self.populateInputDirectory("train")
@@ -271,10 +286,10 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self.model = "cnn"
 
     def populateDataDirectory(self):
-        FILE_PATHS["TRAIN_DATA_DIR"] = self.ui.TrainDirLineEdit.text
-        FILE_PATHS["FEATURE_DIRS"] = [self.ui.FeatureNameLineEdit.text]
-        FILE_PATHS["TIME_POINTS"] = [self.ui.TimePointLineEdit.text]
-        print("Data paths: \n", FILE_PATHS)
+        DEFAULT_FILE_PATHS["TRAIN_DATA_DIR"] = self.ui.TrainDirLineEdit.text
+        DEFAULT_FILE_PATHS["FEATURE_DIRS"] = [self.ui.FeatureNameCombo.currentText]
+        DEFAULT_FILE_PATHS["TIME_POINTS"] = [self.ui.TimePointCombo.currentText]
+        return DEFAULT_FILE_PATHS
 
     def onApplyButton(self):
         """
@@ -282,21 +297,24 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """
         try:
             # Compute output
-            self.populateDataDirectory()
+            file_paths = self.populateDataDirectory()
+            print("File path: ", file_paths)
+
             self.logic.process(
                 in_channels=2,
                 num_classes=2,
                 model_name=self.model,
-                batch_size=int(self.ui.batchSizeLineEdit.text),
-                learning_rate=float(self.ui.learningRateLineEdit.text),
-                max_epochs=int(self.ui.maxEpochLineEdit.text),
+                batch_size=int(self.ui.batchSizeSpinBox.value),
+                learning_rate=float(self.ui.learningRateSpinBox.value),
+                max_epochs=int(self.ui.epochSpinBox.value),
                 n_folds=int(self.ui.CVFoldLineEdit.text),
-                gpus=0,
+                use_gpu=self.ui.gPUCheckBox.isChecked(),
                 logdir=self.ui.writeDirLineEdit.text,
                 exp_name="default",
-                cp_n_epoch=int(self.ui.nEpoch.text),
-                max_cp=int(self.ui.maxCpLineEdit.text),
-                monitor=self.ui.monitorLineEdit.text
+                cp_n_epoch=int(self.ui.cpFreqSpinBox.value),
+                max_cp=int(self.ui.maxCpSpinBox.value),
+                monitor=self.ui.monitorLineEdit.text,
+                file_paths=file_paths
             )
             self.ui.trainingProgressBar.setValue(100)
 
@@ -372,13 +390,14 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
             learning_rate,
             max_epochs,
             n_folds,
-            gpus,
+            use_gpu,
             logdir,
             exp_name="default",
             cp_n_epoch=1,
             max_cp=-1,
             monitor="validation/valid_loss",
-            progressbar=None
+            progressbar=None,
+            file_paths=None
         ):
         """
         Run the processing algorithm.
@@ -391,14 +410,17 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
         :param float learning_rate: learning rate for the training
         :param int max_epochs: Maximum number of epochs the model will be trained.
         :param int n_folds: Number of cross-validation folds
-        :param int gpus: whether to train on gpu or cpu (0 for cpu and 1 for gpu)
+        :param bool use_gpu: whether to train on gpu or cpu (False for cpu and True for gpu)
         :param str logdir: Directory where all the outputs will be saved (like checkpoints and tensorboard logs)
         :param str exp_name: Name of the experiment. A new folder named `exp_name` will be created inside the `logdir`
         for each experiment.
         :param int cp_n_epoch: A new checkpoint will be saved every `cp_n_epoch`
         :param max_cp: The best `max_cp` checkpoints will be kept (Use -1 to keep them all).
-        :param monitor: The value based on which the quality of checkpoint will be assessed.
+        :param monitor: The value based on which the quality of checkpoint will be assessed. Possible values
+        "train/train_loss", "validation/valid_loss", "train/acc", "validation/acc", "train/precision",
+        "validatin/precision", "train/recall", "validation/recall"
         :param progressbar: A progress bar object that will be updated during training
+        :param file_paths: A dictionary containing relevant paths to training data. (Default: FILE_PATH object in CONSTANTS.py)
         """
         args = {
             "batch_size": batch_size,
@@ -406,7 +428,7 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
             "in_channels": in_channels,
             "num_classes": num_classes,
             "max_epochs": max_epochs,
-            "gpus": gpus,
+            "gpus": use_gpu,
             "model": model_name,
             "n_folds": n_folds,
             "data_workers": 1,
@@ -415,7 +437,8 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
             "cp_n_epoch": cp_n_epoch,
             "maxCp": max_cp,
             "monitor": monitor,
-            "qtProgressBarObject": progressbar
+            "qtProgressBarObject": progressbar,
+            "file_paths": file_paths
         }
         import time
         from DeepLearnerLib.training.EfficientNetTrainer import cli_main
