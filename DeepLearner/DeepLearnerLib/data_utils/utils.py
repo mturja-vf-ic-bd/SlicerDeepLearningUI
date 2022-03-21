@@ -1,4 +1,6 @@
 import os
+
+import numpy as np
 import pandas as pd
 import torch.utils.data
 from monai.transforms import LoadImage, AddChannel, ScaleIntensity, EnsureType, Compose
@@ -15,7 +17,7 @@ def get_image_files_single_scalar(data_dir="TRAIN_DATA_DIR", FILE_PATHS=None):
     subject_ids = sorted(os.listdir(FILE_PATHS[data_dir]))
     scalars = FILE_PATHS["FEATURE_DIRS"][0]
     time_points = FILE_PATHS["TIME_POINTS"][0]
-    attr = get_attributes()
+    attr = get_attributes(FILE_PATHS)
     count = {"HR-neg": 0, "HR-ASD": 1}
     for sub in subject_ids:
         feat_tuple = []
@@ -62,6 +64,39 @@ def get_attributes(FILE_PATHS):
     file_path = os.path.join(FILE_PATHS["TRAIN_DATA_DIR"], "DX_and_Dem.csv")
     attr = pd.read_csv(open(file_path))
     return attr
+
+
+def anonymize_dataset(FILE_PATHS):
+    import shutil
+    path = "/Users/mturja/Desktop/sample_dataset"
+    output_path = "/Users/mturja/Desktop/sample_dataset_anonymous"
+    FILE_PATHS["TRAIN_DATA_DIR"] = path
+    attr = get_attributes(FILE_PATHS)
+    attr.drop(columns=["ASD_DX", "Gender", "Project", "HRLR", "MRI_Age", "Visit"], inplace=True)
+    subject_ids = sorted(os.listdir(FILE_PATHS["TRAIN_DATA_DIR"]))
+    subject_ids.remove(".DS_Store")
+    subject_ids.remove("DX_and_Dem.csv")
+    attr.drop(attr[~attr["CandID"].isin([int(s) for s in subject_ids])].index, inplace=True)
+    for i, sub in enumerate(subject_ids):
+        sub_path = os.path.join(path, sub)
+        if not os.path.isdir(sub_path):
+            continue
+        sub_attr = attr.loc[attr["CandID"] == int(sub)]
+        if sub_attr.size == 0:
+            continue
+        group = sub_attr["group"].values[0]
+        if "LR" in group:
+            attr.drop(attr[attr["CandID"] == int(sub)].index, inplace=True)
+            continue
+        print("Copying ... ")
+        attr.loc[attr["CandID"] == int(sub), ["CandID", "group"]] = [i, group]
+        shutil.copytree(os.path.join(path, sub), os.path.join(output_path, str(i)))
+    attr.to_csv(os.path.join(output_path, "DX_and_Dem.csv"))
+
+
+if __name__ == '__main__':
+    anonymize_dataset(DEFAULT_FILE_PATHS)
+
 
 
 

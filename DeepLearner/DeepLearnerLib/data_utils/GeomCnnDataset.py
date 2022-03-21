@@ -18,7 +18,7 @@ from monai.transforms import (
     EnsureType,
 )
 
-from DeepLearnerLib.data_utils.utils import get_image_files_3, get_image_files_single_scalar
+from DeepLearnerLib.data_utils.utils import get_image_files_single_scalar
 from DeepLearnerLib.data_utils.CustomDataset import GeomCnnDataset
 from sklearn.model_selection import train_test_split
 
