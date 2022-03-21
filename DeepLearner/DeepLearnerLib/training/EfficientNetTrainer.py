@@ -28,6 +28,11 @@ try:
 except ImportError:
     slicer.util.pip_install('torchmetrics==0.6.0')
 
+try:
+    import sklearn
+except ImportError:
+    slicer.util.pip_install('scikit-learn==0.24.2')
+
 import torch.nn
 from monai.networks.nets import EfficientNetBN, DenseNet121, DenseNet
 
