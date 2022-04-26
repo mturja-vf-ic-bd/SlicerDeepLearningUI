@@ -1,5 +1,8 @@
 import os.path
+import sys
 import slicer
+
+from DeepLearnerLib.Asynchrony import Asynchrony
 
 try:
     import pytorch_lightning as pl
@@ -41,11 +44,18 @@ from DeepLearnerLib.pl_modules.classifier_modules import ImageClassifier
 from DeepLearnerLib.data_utils.GeomCnnDataset import GeomCnnDataModule, GeomCnnDataModuleKFold
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
-from pytorch_lightning.callbacks.progress import ProgressBar
+from pytorch_lightning.callbacks.progress import ProgressBarBase
 
 
-class LitProgressBar(ProgressBar):
+def weight_reset(m):
+    if isinstance(m, torch.nn.Module) and hasattr(m, 'reset_parameters'):
+        m.reset_parameters()
 
+def setProgressBar(qtProgressBarObject, value):
+    qtProgressBarObject.setValue(value)
+
+
+class LitProgressBar(ProgressBarBase):
     def __init__(self, qtProgressBarObject):
         super().__init__()  # don't forget this :)
         self.enable = True
@@ -54,10 +64,10 @@ class LitProgressBar(ProgressBar):
     def disable(self):
         self.enable = False
 
-    def on_train_epoch_start(self, trainer, pl_module):
-        super().on_train_epoch_start(trainer, pl_module)
-        percent = int((self.current_epoch / self.max_epochs) * 100)
-        self.qtProgressBarObject.setValue(percent)
+    def on_train_epoch_end(self, trainer, pl_module, **kwargs):
+        super().on_train_epoch_end(trainer, pl_module)  # don't forget this :)
+        percent = (pl_module.current_epoch + 1) * 100.0 / trainer.max_epochs
+        Asynchrony.RunOnMainThread(lambda: setProgressBar(self.qtProgressBarObject, percent))
 
 
 def cli_main(args):
@@ -113,7 +123,7 @@ def cli_main(args):
             monitor='validation/valid_loss',
             patience=30
         )
-        # progressBar = LitProgressBar(args["qtProgressBarObject"])
+        progressBar = LitProgressBar(args["qtProgressBarObject"])
         checkpointer = ModelCheckpoint(
             monitor=args["monitor"],
             save_top_k=args["maxCp"], verbose=True, save_last=False,
@@ -125,11 +135,9 @@ def cli_main(args):
         trainer = pl.Trainer(max_epochs=args["max_epochs"],
                              gpus=0 if device == "cpu" else 1,
                              log_every_n_steps=5,
-                             num_sanity_val_steps=0,
+                             num_sanity_val_steps=1,
                              logger=logger,
-                             callbacks=[es, checkpointer])
+                             callbacks=[progressBar, checkpointer, es])
         trainer.fit(model, datamodule=data_modules[i])
-
-#
-# if __name__ == '__main__':
-#     cli_main()
+        model.apply(weight_reset)
+        Asynchrony.RunOnMainThread(lambda: setProgressBar(args["qtProgressBarObject"], 0.0))

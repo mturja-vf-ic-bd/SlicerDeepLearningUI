@@ -4,6 +4,7 @@ import pytorch_lightning as pl
 import torch.nn as nn
 import torch
 import torchmetrics
+from DeepLearnerLib.Asynchrony import Asynchrony
 
 
 class ImageClassifier(pl.LightningModule):

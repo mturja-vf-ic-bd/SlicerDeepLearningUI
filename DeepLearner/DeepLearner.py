@@ -6,6 +6,7 @@ from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 from pathlib import Path
 from DeepLearnerLib.CONSTANTS import DEFAULT_FILE_PATHS
+from DeepLearnerLib.Asynchrony import Asynchrony
 
 #
 # DeepLearnerLib
@@ -46,6 +47,9 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """
         ScriptedLoadableModuleWidget.__init__(self, parent)
         VTKObservationMixin.__init__(self)  # needed for parameter node observation
+        self._asynchrony = None
+        self._finishCallback = None
+        self._running = False
         self.logic = None
         self.model = None
         self._parameterNode = None
@@ -82,22 +86,22 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # Initialize training hyperparameters with default values
         # self.ui.FeatureNameLineEdit.text = ""
         # self.ui.TimePointLineEdit.text = ""
-        self.ui.CVFoldLineEdit.text = "5"
+        self.ui.CVFoldLineEdit.text = "1"
         # self.ui.epochSpinBox.text = ""
         # self.ui.batchSizeLineEdit.text = ""
         # self.ui.learningRateSpinBox.text = ""
-        self.ui.writeDirLineEdit.text = os.path.join(Path.home(), "defaultExperiment")
+        self.ui.writeDirLineEdit.text = os.path.join(Path.home(), "defaultExperiment1")
         self.ui.tbPortLineEdit.text = "6010"
         self.ui.tbAddressLineEdit.text = "localhost"
         self.ui.monitorLineEdit.text = "validation/valid_loss"
 
         # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
         # (in the selected parameter node).
-        self.ui.TrainDirLineEdit.connect("textChanged(str)", self.updateParameterNodeFromGUI)
-        self.ui.epochSpinBox.connect("textChanged(str)", self.updateParameterNodeFromGUI)
+        self.ui.TrainDirLineEdit.textChanged.connect(self.updateParameterNodeFromGUI)
+        self.ui.epochSpinBox.valueChanged.connect(self.updateParameterNodeFromGUI)
         self.ui.gPUCheckBox.connect("toggled(bool)", self.updateParameterNodeFromGUI)
-        self.ui.batchSizeSpinBox.connect("textChanged(str)", self.updateParameterNodeFromGUI)
-        self.ui.learningRateSpinBox.connect("textChanged(str)", self.updateParameterNodeFromGUI)
+        self.ui.batchSizeSpinBox.valueChanged.connect(self.updateParameterNodeFromGUI)
+        self.ui.learningRateSpinBox.valueChanged.connect(self.updateParameterNodeFromGUI)
 
         # Buttons
         self.ui.TrainDirPushButton.connect('clicked(bool)', self.populateTrainDirectory)
@@ -109,10 +113,6 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.ResNetRadio.toggled.connect(self.processRadioButton)
         self.ui.SimpleCNNRadio.toggled.connect(self.processRadioButton)
         self.ui.SimpleCNNRadio.checked = True
-
-
-        # Buttons
-        # self.ui.applyButton.connect('clicked(bool)', self.onApplyButton)
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
@@ -230,6 +230,7 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         wasModified = self._parameterNode.StartModify()  # Modify all properties in a single batch
         # TODO: change update parameter nodes
+        self._parameterNode.SetParameter("")
         # self._parameterNode.SetNodeReferenceID("InputVolume", self.ui.inputSelector.currentNodeID)
         # self._parameterNode.SetNodeReferenceID("OutputVolume", self.ui.outputSelector.currentNodeID)
         # self._parameterNode.SetParameter("Threshold", str(self.ui.imageThresholdSliderWidget.value))
@@ -298,30 +299,58 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         try:
             # Compute output
             file_paths = self.populateDataDirectory()
-            print("File path: ", file_paths)
-
-            self.logic.process(
-                in_channels=2,
-                num_classes=2,
-                model_name=self.model,
-                batch_size=int(self.ui.batchSizeSpinBox.value),
-                learning_rate=float(self.ui.learningRateSpinBox.value),
-                max_epochs=int(self.ui.epochSpinBox.value),
-                n_folds=int(self.ui.CVFoldLineEdit.text),
-                use_gpu=self.ui.gPUCheckBox.isChecked(),
-                logdir=self.ui.writeDirLineEdit.text,
-                exp_name="default",
-                cp_n_epoch=int(self.ui.cpFreqSpinBox.value),
-                max_cp=int(self.ui.maxCpSpinBox.value),
-                monitor=self.ui.monitorLineEdit.text,
-                file_paths=file_paths
+            print("-" * 47)
+            print("-" * 10, "Starting Training Process", "-" * 10)
+            print("-" * 47)
+            self.ui.trainingProgressBar.setValue(0)
+            self._asynchrony = Asynchrony(
+                    lambda: self.logic.process(
+                            in_channels=2,
+                            num_classes=2,
+                            model_name=self.model,
+                            batch_size=int(self.ui.batchSizeSpinBox.value),
+                            learning_rate=float(self.ui.learningRateSpinBox.value),
+                            max_epochs=int(self.ui.epochSpinBox.value),
+                            n_folds=int(self.ui.CVFoldLineEdit.text),
+                            use_gpu=self.ui.gPUCheckBox.isChecked(),
+                            logdir=self.ui.writeDirLineEdit.text,
+                            exp_name="default",
+                            cp_n_epoch=int(self.ui.cpFreqSpinBox.value),
+                            max_cp=int(self.ui.maxCpSpinBox.value),
+                            monitor=self.ui.monitorLineEdit.text,
+                            file_paths=file_paths,
+                            progressbar=self.ui.trainingProgressBar
+                        )
             )
-            self.ui.trainingProgressBar.setValue(100)
-
+            self._asynchrony.Start()
+            self._running = True
         except Exception as e:
             slicer.util.errorDisplay("Failed to compute results: " + str(e))
             import traceback
             traceback.print_exc()
+
+    @property
+    def running(self):
+        return self._running
+
+    def _runFinished(self):
+        self._running = False
+        try:
+            self._asynchrony.GetOutput()
+            if self._finishCallback is not None:
+                self._finishCallback(None)
+        except Asynchrony.CancelledException:
+            # if they cancelled, the finish was as expected
+            if self._finishCallback is not None:
+                self._finishCallback(None)
+        except Exception as e:
+            if self._finishCallback is not None:
+                self._finishCallback(e)
+        finally:
+            self._asynchrony = None
+
+    def setFinishedCallback(self, finishCallback=None):
+        self._finishCallback = finishCallback
 
     def startTBLog(self):
         """
@@ -446,6 +475,7 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
         logging.info('Processing started ... ')
         logging.info(args)
         cli_main(args)
+        progressbar.setValue(100)
         stopTime = time.time()
         logging.info('Processing completed in {0:.2f} seconds'.format(stopTime - startTime))
 
