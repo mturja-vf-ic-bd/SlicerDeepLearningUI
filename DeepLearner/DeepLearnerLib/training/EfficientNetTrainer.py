@@ -36,6 +36,7 @@ try:
 except ImportError:
     slicer.util.pip_install('scikit-learn==0.24.2')
 
+
 import torch.nn
 from monai.networks.nets import EfficientNetBN, DenseNet121, DenseNet
 
@@ -50,6 +51,7 @@ from pytorch_lightning.callbacks.progress import ProgressBarBase
 def weight_reset(m):
     if isinstance(m, torch.nn.Module) and hasattr(m, 'reset_parameters'):
         m.reset_parameters()
+
 
 def setProgressBar(qtProgressBarObject, value):
     qtProgressBarObject.setValue(value)
@@ -102,7 +104,14 @@ def cli_main(args):
     # Data
     # -----------
     if args["n_folds"] == 1:
-        data_modules = [GeomCnnDataModule(batch_size=args["batch_size"], num_workers=args["data_workers"], file_paths=args["file_paths"])]
+        data_modules = [
+            GeomCnnDataModule(
+                batch_size=args["batch_size"],
+                num_workers=args["data_workers"],
+                file_paths=args["file_paths"]
+            )
+        ]
+
     else:
         data_module_generator = GeomCnnDataModuleKFold(
             batch_size=args["batch_size"],
@@ -128,7 +137,8 @@ def cli_main(args):
             monitor=args["monitor"],
             save_top_k=args["maxCp"], verbose=True, save_last=False,
             every_n_epochs=args["cp_n_epoch"],
-            dirpath=os.path.join(args["write_dir"], "logs", args["model"], "fold_" + str(i), "checkpoints"))
+            dirpath=os.path.join(args["write_dir"], "logs", args["model"], "fold_" + str(i), "checkpoints")
+        )
         # ------------
         # training
         # ------------

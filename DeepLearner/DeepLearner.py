@@ -7,6 +7,15 @@ from slicer.util import VTKObservationMixin
 from pathlib import Path
 from DeepLearnerLib.CONSTANTS import DEFAULT_FILE_PATHS
 from DeepLearnerLib.Asynchrony import Asynchrony
+import subprocess
+
+try:
+    import tensorboard
+except ImportError:
+    slicer.util.pip_install('tensorboard==2.7.0')
+    import tensorboard
+
+from tensorboard import program
 
 #
 # DeepLearnerLib
@@ -47,6 +56,8 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """
         ScriptedLoadableModuleWidget.__init__(self, parent)
         VTKObservationMixin.__init__(self)  # needed for parameter node observation
+        self.webWidget = None
+        self.tb_log = None
         self._asynchrony = None
         self._finishCallback = None
         self._running = False
@@ -230,13 +241,6 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         wasModified = self._parameterNode.StartModify()  # Modify all properties in a single batch
         # TODO: change update parameter nodes
-        self._parameterNode.SetParameter("")
-        # self._parameterNode.SetNodeReferenceID("InputVolume", self.ui.inputSelector.currentNodeID)
-        # self._parameterNode.SetNodeReferenceID("OutputVolume", self.ui.outputSelector.currentNodeID)
-        # self._parameterNode.SetParameter("Threshold", str(self.ui.imageThresholdSliderWidget.value))
-        # self._parameterNode.SetParameter("Invert", "true" if self.ui.invertOutputCheckBox.checked else "false")
-        # self._parameterNode.SetNodeReferenceID("OutputVolumeInverse", self.ui.invertedOutputSelector.currentNodeID)
-
         self._parameterNode.EndModify(wasModified)
 
     def populateInputDirectory(self, mode="train"):
@@ -356,20 +360,18 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """
         Starts tensorboard logging
         """
-        import subprocess
-        from multiprocessing import Process
-        cmd = ["tensorboard", "--logdir", self.ui.logDirectoryLineEdit.text, "--port", self.ui.tbPortLineEdit.text]
-        # tb_tool = TensorBoardTool(self.ui.logDirectoryLineEdit.text, self.ui.tbPortLineEdit.text)
-        # p = Process(target=tb_tool.run)
-        # p.start()
-        print(f"Running subprocess: {cmd}")
-        subprocess.Popen(cmd)
-
+        tb_dirs = os.path.join(self.ui.writeDirLineEdit.text, "logs", self.model, "fold_0")
+        tb = program.TensorBoard()
+        tb.configure(argv=[None, '--logdir', tb_dirs])
+        tb.launch()
+        self.tb_log = tb
+        return tb
+            
     def showTBLog(self):
         """
-      Start tensorboard log web ui
-      """
-        # self.startTBLog()
+        Start tensorboard log web ui
+        """
+        Asynchrony(self.startTBLog())
         if not "http" in self.ui.tbAddressLineEdit.text:
             tb_url = "http://"
         else:
