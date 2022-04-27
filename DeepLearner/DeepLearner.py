@@ -95,12 +95,7 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.addObserver(slicer.mrmlScene, slicer.mrmlScene.EndCloseEvent, self.onSceneEndClose)
 
         # Initialize training hyperparameters with default values
-        # self.ui.FeatureNameLineEdit.text = ""
-        # self.ui.TimePointLineEdit.text = ""
         self.ui.CVFoldLineEdit.text = "1"
-        # self.ui.epochSpinBox.text = ""
-        # self.ui.batchSizeLineEdit.text = ""
-        # self.ui.learningRateSpinBox.text = ""
         self.ui.writeDirLineEdit.text = os.path.join(Path.home(), "defaultExperiment1")
         self.ui.tbPortLineEdit.text = "6010"
         self.ui.tbAddressLineEdit.text = "localhost"
@@ -449,7 +444,7 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
         :param max_cp: The best `max_cp` checkpoints will be kept (Use -1 to keep them all).
         :param monitor: The value based on which the quality of checkpoint will be assessed. Possible values
         "train/train_loss", "validation/valid_loss", "train/acc", "validation/acc", "train/precision",
-        "validatin/precision", "train/recall", "validation/recall"
+        "validation/precision", "train/recall", "validation/recall"
         :param progressbar: A progress bar object that will be updated during training
         :param file_paths: A dictionary containing relevant paths to training data. (Default: FILE_PATH object in CONSTANTS.py)
         """
