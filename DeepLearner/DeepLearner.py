@@ -296,15 +296,16 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         Checks if the output directory is empty. If not raises error.
         If no such directory exists, creates a new one.
         """
-        if os.path.exists(self.ui.writeDirLineEdit.text):
-            n_files = len(os.listdir(self.ui.writeDirLineEdit.text))
+        output_path = os.path.join(self.ui.writeDirLineEdit.text, "logs", self.model)
+        if os.path.exists(output_path):
+            n_files = len(os.listdir(output_path))
             if n_files != 0:
                 self.ui.error_dialog = qt.QErrorMessage()
                 self.ui.error_dialog.showMessage('Output directory not empty!')
                 return False
             return True
         else:
-            os.makedirs(self.ui.writeDirLineEdit.text)
+            os.makedirs(output_path)
             return True
 
     def onApplyButton(self):
@@ -440,7 +441,7 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
             n_folds,
             use_gpu,
             logdir,
-            exp_name="default",
+            exp_name="tensorboard",
             cp_n_epoch=1,
             max_cp=-1,
             monitor="validation/valid_loss",
