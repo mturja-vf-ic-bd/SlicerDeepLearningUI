@@ -27,7 +27,7 @@ The output of the training is saved in `Output Directory` folder specified by th
                             | ---- checkpoints
                             | ---- tensorboard
  ```
-The output directory can contain output for multiple runs with different models. For example, the user can specify the same output directory but with different models such as EfficientNet or SimpleCNN. The results for multiple cross-validation folds will be saved for each of these models. The model checkpoints will be saved under "checkpoints" directory and tensorboard logs will be saved under "tensorboard"
+The output directory can contain output for multiple runs with different models. For example, the user can specify the same output directory but with different models such as EfficientNet or SimpleCNN. However, the path `<output directory>/log/<model_name>` must be empty. The results for multiple cross-validation folds will be saved for each of these models. The model checkpoints will be saved under "checkpoints" directory and tensorboard logs will be saved under "tensorboard"
 ## Environment Setup
 Install the following libraries using `pip` in Slicer-Python environment
 ```
