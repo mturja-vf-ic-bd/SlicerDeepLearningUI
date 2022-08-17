@@ -17,6 +17,17 @@ root_data_folder
 So for each subject, there can be data for multiple timestamps and multiple feature set. The user can choose to train the model for a particular timestamp and a particular feature set. For example, in the following example, each subject has features at two time points -- 6 months (V06) and 12 months (V12). For each of these time points the subject has 3 feature sets -- cortical thickness (thickness), surface area (sa), and, local ea-csf (eacsf). The jpeg images are 2D images for left and right hemisphere of the brain. The shape of the images must match across hemisphere and population.
 #### Example:
 ![data organization demo](screenshot2.png)
+### Output Directory
+The output of the training is saved in `Output Directory` folder specified by the user. The output folder is organized as follows:
+```
+| ---- <output directory>
+       | ---- log
+              | ---- <model_name>
+                     | ---- fold_<k>
+                            | ---- checkpoints
+                            | ---- tensorboard
+ ```
+The output directory can contain output for multiple runs with different models. For example, the user can specify the same output directory but with different models such as EfficientNet or SimpleCNN. The results for multiple cross-validation folds will be saved for each of these models. The model checkpoints will be saved under "checkpoints" directory and tensorboard logs will be saved under "tensorboard"
 ## Environment Setup
 Install the following libraries using `pip` in Slicer-Python environment
 ```
