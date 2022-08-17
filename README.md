@@ -27,7 +27,14 @@ The output of the training is saved in `Output Directory` folder specified by th
                             | ---- checkpoints
                             | ---- tensorboard
  ```
-The output directory can contain output for multiple runs with different models. For example, the user can specify the same output directory but with different models such as EfficientNet or SimpleCNN. However, the path `<output directory>/log/<model_name>` must be empty. The results for multiple cross-validation folds will be saved for each of these models. The model checkpoints will be saved under "checkpoints" directory and tensorboard logs will be saved under "tensorboard"
+The output directory can contain output for multiple runs with different models. For example, the user can specify the same output directory but with different models such as EfficientNet or SimpleCNN. However, the path `<output directory>/log/<model_name>` must be empty. The results for multiple cross-validation folds will be saved for each of these models. The model checkpoints will be saved under "checkpoints" directory and tensorboard logs will be saved under "tensorboard".
+
+#### Checkpoints
+The trainer will save `n` checkpoints where `n` is a number specified by user in the `Maximum checkpoints` field under `Checkpointing`. There are the `n` best checkpoints based on `validation_loss`.
+#### Tensorboard
+The user can monitor the loss/accuracy/auc during training using the tensorboard logs saved in the "tensorboard" directory. There are two steps to do this:
+1. Run tensorboard server using: `tensorboard --logdir <output directory>/log/<model_name>/<fold_<k>/<tensorboard> --port <port_number>`.
+2. Adjust `Tensorboard port` in the UI and push `Show Log` button.
 ## Environment Setup
 Install the following libraries using `pip` in Slicer-Python environment
 ```
