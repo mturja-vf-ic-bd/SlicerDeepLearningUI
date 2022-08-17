@@ -82,10 +82,10 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # "mrmlSceneChanged(vtkMRMLScene*)" signal in is connected to each MRML widget's.
         # "setMRMLScene(vtkMRMLScene*)" slot.
         uiWidget.setMRMLScene(slicer.mrmlScene)
+        self.uiWidget = uiWidget
 
         # Create logic class. Logic implements all computations that should be possible to run
         # in batch mode, without a graphical user interface.
-        self.uiWidget = uiWidget
         self.logic = DeepLearnerLogic()
 
         # Connections
@@ -291,6 +291,22 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         DEFAULT_FILE_PATHS["TIME_POINTS"] = [self.ui.TimePointCombo.currentText]
         return DEFAULT_FILE_PATHS
 
+    def checkOutputDirectory(self):
+        """
+        Checks if the output directory is empty. If not raises error.
+        If no such directory exists, creates a new one.
+        """
+        if os.path.exists(self.ui.writeDirLineEdit.text):
+            n_files = len(os.listdir(self.ui.writeDirLineEdit.text))
+            if n_files != 0:
+                self.ui.error_dialog = qt.QErrorMessage()
+                self.ui.error_dialog.showMessage('Output directory not empty!')
+                return False
+            return True
+        else:
+            os.makedirs(self.ui.writeDirLineEdit.text)
+            return True
+
     def onApplyButton(self):
         """
         Run processing when user clicks "Apply" button.
@@ -298,31 +314,37 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         try:
             # Compute output
             file_paths = self.populateDataDirectory()
-            print("-" * 47)
-            print("-" * 10, "Starting Training Process", "-" * 10)
-            print("-" * 47)
-            self.ui.trainingProgressBar.setValue(0)
-            self._asynchrony = Asynchrony(
-                    lambda: self.logic.process(
-                            in_channels=2,
-                            num_classes=2,
-                            model_name=self.model,
-                            batch_size=int(self.ui.batchSizeSpinBox.value),
-                            learning_rate=float(self.ui.learningRateSpinBox.value),
-                            max_epochs=int(self.ui.epochSpinBox.value),
-                            n_folds=int(self.ui.CVFoldLineEdit.text),
-                            use_gpu=self.ui.gPUCheckBox.isChecked(),
-                            logdir=self.ui.writeDirLineEdit.text,
-                            exp_name="default",
-                            cp_n_epoch=int(self.ui.cpFreqSpinBox.value),
-                            max_cp=int(self.ui.maxCpSpinBox.value),
-                            monitor=self.ui.monitorLineEdit.text,
-                            file_paths=file_paths,
-                            progressbar=self.ui.trainingProgressBar
-                        )
-            )
-            self._asynchrony.Start()
-            self._running = True
+            isEmpty = self.checkOutputDirectory()
+
+            if isEmpty:
+                print("-" * 47)
+                print("-" * 10, "Starting Training Process", "-" * 10)
+                print("-" * 47)
+                # Disable training buttons
+                self.ui.StartTrain.enabled = False
+                self.ui.TrainDirPushButton.enabled = False
+                self.ui.trainingProgressBar.setValue(0)
+                self._asynchrony = Asynchrony(
+                        lambda: self.logic.process(
+                                in_channels=2,
+                                num_classes=2,
+                                model_name=self.model,
+                                batch_size=int(self.ui.batchSizeSpinBox.value),
+                                learning_rate=float(self.ui.learningRateSpinBox.value),
+                                max_epochs=int(self.ui.epochSpinBox.value),
+                                n_folds=int(self.ui.CVFoldLineEdit.text),
+                                use_gpu=self.ui.gPUCheckBox.isChecked(),
+                                logdir=self.ui.writeDirLineEdit.text,
+                                exp_name="default",
+                                cp_n_epoch=int(self.ui.cpFreqSpinBox.value),
+                                max_cp=int(self.ui.maxCpSpinBox.value),
+                                monitor=self.ui.monitorLineEdit.text,
+                                file_paths=file_paths,
+                                ui=self.ui
+                            )
+                )
+                self._asynchrony.Start()
+                self._running = True
         except Exception as e:
             slicer.util.errorDisplay("Failed to compute results: " + str(e))
             import traceback
@@ -422,8 +444,8 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
             cp_n_epoch=1,
             max_cp=-1,
             monitor="validation/valid_loss",
-            progressbar=None,
-            file_paths=None
+            file_paths=None,
+            ui=None
         ):
         """
         Run the processing algorithm.
@@ -445,8 +467,8 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
         :param monitor: The value based on which the quality of checkpoint will be assessed. Possible values
         "train/train_loss", "validation/valid_loss", "train/acc", "validation/acc", "train/precision",
         "validation/precision", "train/recall", "validation/recall"
-        :param progressbar: A progress bar object that will be updated during training
         :param file_paths: A dictionary containing relevant paths to training data. (Default: FILE_PATH object in CONSTANTS.py)
+        :param ui: The UI object
         """
         args = {
             "batch_size": batch_size,
@@ -463,7 +485,7 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
             "cp_n_epoch": cp_n_epoch,
             "maxCp": max_cp,
             "monitor": monitor,
-            "qtProgressBarObject": progressbar,
+            "qtProgressBarObject": ui.trainingProgressBar,
             "file_paths": file_paths
         }
         import time
@@ -472,7 +494,9 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
         logging.info('Processing started ... ')
         logging.info(args)
         cli_main(args)
-        progressbar.setValue(100)
+        ui.trainingProgressBar.setValue(100)
+        ui.StartTrain.enabled = True
+        ui.TrainDirPushButton.enabled = True
         stopTime = time.time()
         logging.info('Processing completed in {0:.2f} seconds'.format(stopTime - startTime))
 
