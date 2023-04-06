@@ -14,4 +14,4 @@ class GeomCnnDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         return np.concatenate(self.transforms(self.image_files[idx]), axis=0), \
-               self.labels[idx]
+               self.labels[idx], self.image_files[idx][0].split("/")[-4]

@@ -3,6 +3,8 @@ import pathlib
 import unittest
 import logging
 
+import pandas as pd
+
 try:
     import numpy as np
 except ImportError:
@@ -97,6 +99,7 @@ class InferenceWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui = slicer.util.childWidgetVariables(uiWidget)
 
         # Default values
+        self.ui.OutputDirectoryLineEdit.text = os.path.expanduser("~") + "/SlicerInferenceModule/PredictionResults"
         self.ui.inferenceProgressBar.setValue(0)
 
         # Create logic class. Logic implements all computations that should be possible to run
@@ -332,17 +335,19 @@ class InferenceLogic(ScriptedLoadableModuleLogic):
             fold_id=0
     ):
         preds = []
+        subject_ids = []
         count = 1
         sample_size = len(data_loader)
-        for x, y in data_loader:
+        for x, y, s in data_loader:
             y_hat = model(x)
             y_hat = torch.argmax(torch.nn.Softmax(dim=-1)(y_hat), dim=-1)
             preds.append(y_hat)
+            subject_ids += s
             val = ((count + sample_size * fold_id) * 100) // (sample_size * self.n_fold)
             Asynchrony.RunOnMainThread(lambda: self.progressBar.setValue(val))
             count += 1
         preds = torch.cat(preds)
-        return preds
+        return preds, subject_ids
 
     def process(
             self,
@@ -379,7 +384,7 @@ class InferenceLogic(ScriptedLoadableModuleLogic):
         if os.path.isfile(model_path):
             self.n_fold = 1
             model = torch.load(model_path)
-            predictions = self.predict(model, data_loader, 0)
+            predictions, subject_ids = self.predict(model, data_loader, 0)
         else:
             # majority voting
             predictions = []
@@ -389,7 +394,7 @@ class InferenceLogic(ScriptedLoadableModuleLogic):
             self.n_fold = len(fold_model_paths)
             for i, path in enumerate(fold_model_paths):
                 model = torch.load(path)
-                preds = self.predict(model, data_loader, fold_id=i)
+                preds, subject_ids = self.predict(model, data_loader, fold_id=i)
                 np.savetxt(os.path.join(os.path.dirname(path),
                                         "predictions.csv"),
                            preds.unsqueeze(-1).cpu().numpy(), delimiter=",")
@@ -397,8 +402,9 @@ class InferenceLogic(ScriptedLoadableModuleLogic):
             predictions = torch.stack(predictions, dim=-1)
             predictions = torch.mode(predictions, dim=-1, keepdim=True)[0]
 
-        np.savetxt(os.path.join(save_path, "predictions.csv"),
-                   predictions.cpu().numpy(), delimiter=",")
+        pred_df = pd.DataFrame({"subject_id": subject_ids, "prediction": predictions.squeeze().cpu().numpy()})
+        print(pred_df)
+        pred_df.to_csv(os.path.join(save_path, "predictions.csv"))
         stopTime = time.time()
         logging.info('Processing completed in {0:.2f} seconds'.format(stopTime - startTime))
         Asynchrony.RunOnMainThread(
