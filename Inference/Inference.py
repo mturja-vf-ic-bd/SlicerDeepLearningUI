@@ -56,7 +56,7 @@ class Inference(ScriptedLoadableModule):
         for applying the trained models on new datasets. The dataset must have the same hierarchy 
         as the training dataset. The model path can be either *.pt file or the folder containing 
         the output of all the folds from the training module.
-        Github link: 
+        Github link: https://github.com/mturja-vf-ic-bd/SlicerDeepLearningUI/tree/inference-dev/Inference
         """
         # TODO: replace with organization, grant and thanks
         self.parent.acknowledgementText = """dummy"""
@@ -260,10 +260,6 @@ class InferenceWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             save_path = self.constructWriteDirectory()
             if save_path is None:
                 raise Exception("Output Directory can't be empty")
-            # if os.path.isdir(self.ui.ModelDirLineEdit.text):
-            #     save_path = self.ui.ModelDirLineEdit.text
-            # else:
-            #     save_path = os.path.dirname(self.ui.ModelDirLineEdit.text)
             self._asynchrony = Asynchrony(
                 lambda: self.logic.process(
                     file_paths=file_paths,
