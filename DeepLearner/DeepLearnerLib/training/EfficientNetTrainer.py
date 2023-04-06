@@ -1,3 +1,4 @@
+import logging
 import os.path
 import sys
 import slicer
@@ -94,7 +95,6 @@ def cli_main(args):
     else:
         backbone = SimpleCNN()
     device = "cuda:0" if torch.cuda.is_available() and args["use_gpu"] else "cpu"
-    print(f"Using device: {device}")
     model = ImageClassifier(backbone, learning_rate=args["learning_rate"],
                             criterion=torch.nn.CrossEntropyLoss(weight=torch.FloatTensor([1.0, 5.0])),
                             device=device,
@@ -149,5 +149,8 @@ def cli_main(args):
                              logger=logger,
                              callbacks=[progressBar, checkpointer, es])
         trainer.fit(model, datamodule=data_modules[i])
+        saved_name = os.path.join(args["write_dir"], "logs", args["model"], "fold_" + str(i), "model.pt")
+        logging.info(f"Saving model: {saved_name}")
+        torch.save(model.backbone, saved_name)
         model.apply(weight_reset)
         Asynchrony.RunOnMainThread(lambda: setProgressBar(args["qtProgressBarObject"], 0.0))

@@ -1,13 +1,14 @@
 import os
 import unittest
 import logging
+from collections import defaultdict
+
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 from pathlib import Path
 from DeepLearnerLib.CONSTANTS import DEFAULT_FILE_PATHS
 from DeepLearnerLib.Asynchrony import Asynchrony
-import subprocess
 
 try:
     import tensorboard
@@ -56,6 +57,7 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """
         ScriptedLoadableModuleWidget.__init__(self, parent)
         VTKObservationMixin.__init__(self)  # needed for parameter node observation
+        self.counter = None
         self.webWidget = None
         self.tb_log = None
         self._asynchrony = None
@@ -96,7 +98,7 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         # Initialize training hyperparameters with default values
         self.ui.CVFoldLineEdit.text = "1"
-        self.ui.writeDirLineEdit.text = os.path.join(Path.home(), "defaultExperiment1")
+        self.ui.writeDirLineEdit.text = os.path.join(Path.home(), "DeepUI")
         self.ui.tbPortLineEdit.text = "6010"
         self.ui.tbAddressLineEdit.text = "localhost"
         self.ui.monitorLineEdit.text = "validation/valid_loss"
@@ -253,6 +255,7 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 self.ui.TrainDirLineEdit.text = directoryPath[0]
                 feat_set = set()
                 timepoints = set()
+                counter = {}
                 for sub in os.listdir(self.trainDir):
                     if not os.path.isdir(os.path.join(self.trainDir, sub)):
                         continue
@@ -264,10 +267,15 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                             if not os.path.isdir(os.path.join(self.trainDir, sub, tp, feat)):
                                 continue
                             feat_set.add(feat)
+                            if f"{tp}_{feat}" in counter.keys():
+                                counter[f"{tp}_{feat}"] += 1
+                            else:
+                                counter[f"{tp}_{feat}"] = 1
                 for f in feat_set:
                     self.ui.FeatureNameCombo.addItem(f)
                 for tp in timepoints:
                     self.ui.TimePointCombo.addItem(tp)
+                self.counter = counter
 
     def populateTrainDirectory(self):
         self.populateInputDirectory("train")
@@ -289,7 +297,17 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         DEFAULT_FILE_PATHS["TRAIN_DATA_DIR"] = self.ui.TrainDirLineEdit.text
         DEFAULT_FILE_PATHS["FEATURE_DIRS"] = [self.ui.FeatureNameCombo.currentText]
         DEFAULT_FILE_PATHS["TIME_POINTS"] = [self.ui.TimePointCombo.currentText]
-        return DEFAULT_FILE_PATHS
+        self.ui.msg = qt.QMessageBox()
+        self.ui.msg.setIcon(qt.QMessageBox.Information)
+        total_samples = self.counter[f"{self.ui.TimePointCombo.currentText}_{self.ui.FeatureNameCombo.currentText}"]
+        self.ui.msg.setText(f"{total_samples} training samples available for session: "
+                    f"{self.ui.TimePointCombo.currentText}, modality: {self.ui.FeatureNameCombo.currentText}")
+        self.ui.msg.setWindowTitle("Number of data samples")
+        self.ui.msg.setInformativeText("Is it enough for training?")
+        self.ui.msg.setStandardButtons(qt.QMessageBox.Yes | qt.QMessageBox.No)
+        self.ui.msg.setDefaultButton(qt.QMessageBox.Yes)
+        ret = self.ui.msg.exec()
+        return DEFAULT_FILE_PATHS, ret == qt.QMessageBox.Yes
 
     def checkOutputDirectory(self):
         """
@@ -300,8 +318,6 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         if os.path.exists(output_path):
             n_files = len(os.listdir(output_path))
             if n_files != 0:
-                self.ui.error_dialog = qt.QErrorMessage()
-                self.ui.error_dialog.showMessage('Output directory not empty!')
                 return False
             return True
         else:
@@ -314,10 +330,10 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """
         try:
             # Compute output
-            file_paths = self.populateDataDirectory()
+            file_paths, enough_samples = self.populateDataDirectory()
             isEmpty = self.checkOutputDirectory()
 
-            if isEmpty:
+            if isEmpty and enough_samples:
                 print("-" * 47)
                 print("-" * 10, "Starting Training Process", "-" * 10)
                 print("-" * 47)
@@ -346,6 +362,13 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 )
                 self._asynchrony.Start()
                 self._running = True
+
+            elif not enough_samples:
+                self.ui.sample_error_dialog = qt.QErrorMessage()
+                self.ui.sample_error_dialog.showMessage('Not enough samples!')
+            elif not isEmpty:
+                self.ui.error_dialog = qt.QErrorMessage()
+                self.ui.error_dialog.showMessage('Output directory not empty!')
         except Exception as e:
             slicer.util.errorDisplay("Failed to compute results: " + str(e))
             import traceback
