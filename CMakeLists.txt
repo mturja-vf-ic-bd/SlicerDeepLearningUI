@@ -22,6 +22,7 @@ include(${Slicer_USE_FILE})
 add_subdirectory(DeepLearner)
 add_subdirectory(Deep)
 add_subdirectory(Inference)
+add_subdirectory(GeometryImage)
 ## NEXT_MODULE
 
 #-----------------------------------------------------------------------------
