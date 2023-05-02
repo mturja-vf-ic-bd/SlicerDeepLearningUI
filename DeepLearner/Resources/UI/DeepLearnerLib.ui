@@ -7,52 +7,13 @@
     <x>0</x>
     <y>0</y>
     <width>657</width>
-    <height>844</height>
+    <height>785</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>GeomCNN</string>
   </property>
   <layout class="QVBoxLayout" name="UserInputPane">
-   <item>
-    <widget class="ctkCollapsibleButton" name="inputsCollapsibleButton" native="true">
-     <property name="text" stdset="0">
-      <string>Input Directory</string>
-     </property>
-     <layout class="QFormLayout" name="formLayout_3">
-      <item row="2" column="1">
-       <widget class="QLineEdit" name="TrainDirLineEdit"/>
-      </item>
-      <item row="3" column="1">
-       <widget class="QPushButton" name="TrainDirPushButton">
-        <property name="text">
-         <string>Load Training Data Directory</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Modality</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1">
-       <widget class="QComboBox" name="FeatureNameCombo"/>
-      </item>
-      <item row="5" column="0">
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>Session</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="1">
-       <widget class="QComboBox" name="TimePointCombo"/>
-      </item>
-     </layout>
-    </widget>
-   </item>
    <item>
     <widget class="ctkCollapsibleButton" name="trainingCollapsibleButton" native="true">
      <property name="text" stdset="0">
@@ -164,28 +125,28 @@
       <item row="0" column="0">
        <widget class="QRadioButton" name="DenseNetRadio">
         <property name="text">
-         <string>DenseNet</string>
+         <string>DenseNet (7M)</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
        <widget class="QRadioButton" name="EfficientNetRadio">
         <property name="text">
-         <string>EfficientNet</string>
+         <string>EfficientNet (4M)</string>
         </property>
        </widget>
       </item>
       <item row="1" column="0">
        <widget class="QRadioButton" name="SimpleCNNRadio">
         <property name="text">
-         <string>SimpleCNN</string>
+         <string>SimpleCNN (75K)</string>
         </property>
        </widget>
       </item>
       <item row="1" column="1">
        <widget class="QRadioButton" name="ResNetRadio">
         <property name="text">
-         <string>ResNet</string>
+         <string>ResNet (75K)</string>
         </property>
        </widget>
       </item>

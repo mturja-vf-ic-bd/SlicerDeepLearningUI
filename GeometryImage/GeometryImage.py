@@ -234,6 +234,7 @@ class GeometryImageWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                     self.ui.InputLineEdit.text,
                     self.ui.TemplateLineEdit.text,
                     self.ui.OutputLineEdit.text,
+                    self.ui.FileTypeCombo.currentText,
                     512,
                     self.ui.progressBar)
             )
@@ -270,7 +271,7 @@ class GeometryImageLogic(ScriptedLoadableModuleLogic):
     """
         pass
 
-    def process(self, InputDirectory, TemplateDirectory, OutputDirectory, r=512, progressBar=None):
+    def process(self, InputDirectory, TemplateDirectory, OutputDirectory, type, r=512, progressBar=None):
         """
         Run the processing algorithm.
         Can be used without GUI widget.
@@ -293,6 +294,8 @@ class GeometryImageLogic(ScriptedLoadableModuleLogic):
             'sub_dir': InputDirectory,
             'sphere_template': TemplateDirectory,
             'resolution': r,
+            'type': type,
+            'modalities': None,
             'output': OutputDirectory,
             'progressBar': progressBar
         }

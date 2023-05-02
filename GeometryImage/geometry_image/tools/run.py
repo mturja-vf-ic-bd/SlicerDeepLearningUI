@@ -21,72 +21,113 @@ def run_geom_image(args):
     """
     Run this script to compute geometry image for a set of subjects in a directory
     """
-
-    filenames = generate_file_names(args["sub_dir"], args["output"])
+    print("In Geom Image")
+    print(args)
+    filenames = generate_file_names(
+        args["sub_dir"],
+        args["output"],
+        args["type"],
+        args["modalities"]
+    )
     total = len(filenames)
     c = 0
     for files in filenames:
-        input_file, output_file = files
+        input_file, output_file, sc = files
+        print(f"in: {input_file}\n out:{output_file}")
         args["feature_map"] = input_file
         args["output"] = output_file
+        args["feat_name"] = sc
         sgim_sampling_wrapper(args)
         c += 1
-        val =(c + 1) * 100 // total
+        val = (c + 1) * 100 // total
         if args["progressBar"] is not None:
             Asynchrony.RunOnMainThread(lambda: args["progressBar"].setValue(val))
     if args["progressBar"] is not None:
         Asynchrony.RunOnMainThread(lambda: args["progressBar"].setValue(val))
 
 
-def generate_file_names(input_directory, output_directory):
+def generate_file_names(
+        input_directory,
+        output_directory,
+        type="txt",
+        modalities=None):
     """
     This function generates input and output file names
     from the following directory structure.
 
     :param input_directory: Contains one folder per subject.
-    Each of the folder will contain folders for each scalars.
+    Each of the folder will contain folders for each sessions.
+    There are two valid folder hierarchy:
     ============= Example Directory Structure =============
-        <directory>
+    1.   <directory>
             <sub_id_1>
                 <session_id>
                     - <modality 1>
+                        - *txt
                     - <modality 2>
+                        - *txt
                     - etc.
             <sub_id_2>
                 <session_id>
                     - <modality 1>
+                        - *txt
                     - <modality 2>
+                        - *txt
                     - etc.
-    :param output_directory: Output directory to store the results
+
+    2.   <directory>
+            <sub_id_1>
+                <session_id>
+                    - *vtk
+            <sub_id_2>
+                <session_id>
+                    - *vtk
+            etc.
+
+
+    :param output_directory: Output directory to store the results.
+    :param type:
+    :param modalities: If the type is "vtk", modalities (i.e. the scalars) must be specified.
     :return: list of (input_file, output_file) filename tuples.
     """
 
+    if modalities is None:
+        modalities = ["x", "y", "z"]
+    print(f"Type: {type}")
     subject_ids = os.listdir(input_directory)
     filenames = []
     for sub in subject_ids:
         if not os.path.isdir(os.path.join(input_directory, sub)):
             continue
         time_points = os.listdir(os.path.join(input_directory, sub))
-
         for t in time_points:
-            print(sub, t)
             if not os.path.isdir(os.path.join(input_directory, sub, t)):
                 continue
-            scalars = os.listdir(os.path.join(input_directory, sub, t))
-            for sc in scalars:
-                if not os.path.isdir(os.path.join(input_directory, sub, t, sc)):
-                    continue
-                Path(os.path.join(output_directory, sub, t, sc)).mkdir(exist_ok=True, parents=True)
-                for file in os.listdir(os.path.join(input_directory, sub, t, sc)):
-                    if file.endswith("txt") and \
-                            not os.path.isdir(
-                                os.path.join(input_directory, sub, t, sc, file)
-                            ):
-                        input_file = os.path.join(input_directory, sub, t, sc, file)
-                        output_file = os.path.join(
-                            output_directory, sub, t, sc,
-                            file.split(".")[0] + "_flat.jpeg")
-                        filenames.append((input_file, output_file))
+            if type == "txt":
+                scalars = os.listdir(os.path.join(input_directory, sub, t))
+                for sc in scalars:
+                    if not os.path.isdir(os.path.join(input_directory, sub, t, sc)):
+                        continue
+                    Path(os.path.join(output_directory, sub, t, sc)).mkdir(exist_ok=True, parents=True)
+                    for file in os.listdir(os.path.join(input_directory, sub, t, sc)):
+                        if file.endswith("txt") and \
+                                not os.path.isdir(
+                                    os.path.join(input_directory, sub, t, sc, file)
+                                ):
+                            input_file = os.path.join(input_directory, sub, t, sc, file)
+                            output_file = os.path.join(
+                                output_directory, sub, t, sc,
+                                file.split(".")[0] + "_flat.jpeg")
+                            filenames.append((input_file, output_file, sc))
+            elif type == "vtk":
+                input_files = [f for f in os.listdir(os.path.join(input_directory, sub, t)) if f.endswith("vtk")]
+                output_files = []
+                for m in modalities:
+                    output_files += [os.path.join(output_directory, sub, t, m, f.split(".")[0] + f"_flat.jpeg")
+                                     for f in input_files]
+                sc = list(np.repeat(modalities, len(input_files)))
+                input_files = [os.path.join(input_directory, sub, t, f) for f in input_files] * len(modalities)
+                filenames += list(zip(input_files, output_files, sc))
     return filenames
 
 

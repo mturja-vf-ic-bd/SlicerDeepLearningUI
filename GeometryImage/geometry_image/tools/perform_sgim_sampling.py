@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import slicer
 import os
 import pickle
@@ -144,16 +146,33 @@ def normalize(image_array):
     return image_array.astype(np.uint8)
 
 
+def read_features(filename, feat_name=None):
+    if filename.endswith("txt"):
+        feature = np.genfromtxt(filename)
+    elif filename.endswith("vtk"):
+        poly_data = ReadPolyData(filename)
+        if feat_name == "x":
+            feature = vtk_to_numpy(poly_data.GetPoints().GetData())[:, 0]
+        elif feat_name == "y":
+            feature = vtk_to_numpy(poly_data.GetPoints().GetData())[:, 1]
+        elif feat_name == "z":
+            feature = vtk_to_numpy(poly_data.GetPoints().GetData())[:, 2]
+        else:
+            feature = vtk_to_numpy(poly_data.GetPointData().GetArray(feat_name))
+    return feature
+
+
 def sgim_sampling_wrapper(args):
     # Process sphere template to get 2D coordinates
     posw = get_flat_coordinates(args["sphere_template"])
-    feature = np.genfromtxt(args["feature_map"])
+    feature = read_features(args["feature_map"], args["feat_name"])
 
     # Render 2D image with 2D coordinates and feature map
     image_array = render_2d_image(posw.T, feature, args["resolution"])
     image_array = pad_2d_image(image_array)
     image_array = normalize(image_array)
     im = Image.fromarray(image_array)
+    Path(os.path.dirname(args["output"])).mkdir(parents=True, exist_ok=True)
     im.save(args["output"])
 
 
