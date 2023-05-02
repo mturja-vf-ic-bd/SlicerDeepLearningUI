@@ -39,7 +39,7 @@ except ImportError:
 
 
 import torch.nn
-from monai.networks.nets import EfficientNetBN, DenseNet121, DenseNet
+from monai.networks.nets import EfficientNetBN, DenseNet121, DenseNet, SEResNet50
 
 from DeepLearnerLib.models.cnn_model import SimpleCNN
 from DeepLearnerLib.pl_modules.classifier_modules import ImageClassifier
@@ -83,7 +83,7 @@ def cli_main(args):
         backbone = EfficientNetBN(
             model_name="efficientnet-b0",
             in_channels=args["in_channels"],
-            pretrained=False,
+            pretrained=True,
             num_classes=2
         )
     elif args["model"] == "densenet":
@@ -91,6 +91,13 @@ def cli_main(args):
             spatial_dims=2,
             in_channels=args["in_channels"],
             out_channels=2
+        )
+    elif args["model"] == "resnet":
+        backbone = SEResNet50(
+            spatial_dims=2,
+            in_channels=args["in_channels"],
+            num_classes=2,
+            pretrained=True
         )
     else:
         backbone = SimpleCNN()

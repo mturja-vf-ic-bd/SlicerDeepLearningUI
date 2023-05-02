@@ -6,15 +6,24 @@ implicit correspondence.
 
 ## Input
 ![](geom_image.png?raw=true)
-* Input Directory: The module assumes that the `input directory` is organized in the following manner:
+* Input Directory: The module assumes that the `input directory` is organized in one of the following two manners:
 ```
-input_directory
+1.
+```input_directory
+>>>>>>> geometry_image
 | ---- subject_id
        | ---- session
               | ---- modality
                      | ---- *.txt
 ```
 The `txt` files contain the features at each point on the surface.
+2.
+```
+input_directory
+| ---- subject_id
+       | ---- session
+              | ---- *.vtk
+```
 * Sphere Template: A `vtk` / `obj` file containing the icosahedron subdivision of the shpere
   where the surface is mapped.
 * Output Directory: The output directory where the results will be saved. The module will create

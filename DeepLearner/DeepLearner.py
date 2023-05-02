@@ -1,14 +1,13 @@
 import os
-import unittest
 import logging
-from collections import defaultdict
-
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 from pathlib import Path
+
 from DeepLearnerLib.CONSTANTS import DEFAULT_FILE_PATHS
 from DeepLearnerLib.Asynchrony import Asynchrony
+from CheckableComboBox import CheckableComboBox
 
 try:
     import tensorboard
@@ -17,10 +16,6 @@ except ImportError:
     import tensorboard
 
 from tensorboard import program
-
-#
-# DeepLearnerLib
-#
 
 
 class DeepLearner(ScriptedLoadableModule):
@@ -57,6 +52,9 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """
         ScriptedLoadableModuleWidget.__init__(self, parent)
         VTKObservationMixin.__init__(self)  # needed for parameter node observation
+        self.uiWidget = None
+        self.connect_form_layout = None
+        self.connect_collapsible_button = None
         self.counter = None
         self.webWidget = None
         self.tb_log = None
@@ -68,6 +66,32 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self._parameterNode = None
         self._updatingGUIFromParameterNode = False
 
+    def modifyUI(self):
+        self.connect_collapsible_button = ctk.ctkCollapsibleButton()
+        # self.connect_collapsible_button = self.ui.inputsCollapsibleButton
+        self.connect_collapsible_button.text = 'Input'
+        self.connect_form_layout = qt.QGridLayout(self.connect_collapsible_button)
+        # self.connect_form_layout.setColumnStretch(0, 1)
+        # self.connect_form_layout.setColumnStretch(1, 1)
+        ########## Collapsible Layout Widgets
+        self.InputDirLineEdit = qt.QLineEdit()
+        self.InputDirPushButton = qt.QPushButton("Load Training Data Directory")
+        self.modality_label = qt.QLabel('Modality')
+        self.modality_label.alignment = 'AlignLeft'
+        self.session_label = qt.QLabel('Session')
+        self.session_label.alignment = 'AlignLeft'
+        self.modalityComboBox = CheckableComboBox()
+        self.modalityComboBox.toolTip = "Modality Combo Box."
+        self.sessionComboBox = CheckableComboBox()
+        self.sessionComboBox.toolTip = "Session Combo Box"
+        self.connect_form_layout.addWidget(self.InputDirLineEdit, 0, 1)
+        self.connect_form_layout.addWidget(self.InputDirPushButton, 1, 1)
+        self.connect_form_layout.addWidget(self.modality_label, 2, 0)
+        self.connect_form_layout.addWidget(self.modalityComboBox, 2, 1)
+        self.connect_form_layout.addWidget(self.session_label, 3, 0)
+        self.connect_form_layout.addWidget(self.sessionComboBox, 3, 1)
+        return self.connect_collapsible_button
+
     def setup(self):
         """
         Called when the user opens the module the first time and the widget is initialized.
@@ -77,6 +101,8 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # Load widget from .ui file (created by Qt Designer).
         # Additional widgets can be instantiated manually and added to self.layout.
         uiWidget = slicer.util.loadUI(self.resourcePath('UI/DeepLearnerLib.ui'))
+        input_widget = self.modifyUI()
+        self.layout.addWidget(input_widget)
         self.layout.addWidget(uiWidget)
         self.ui = slicer.util.childWidgetVariables(uiWidget)
 
@@ -85,9 +111,6 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # "setMRMLScene(vtkMRMLScene*)" slot.
         uiWidget.setMRMLScene(slicer.mrmlScene)
         self.uiWidget = uiWidget
-
-        # Create logic class. Logic implements all computations that should be possible to run
-        # in batch mode, without a graphical user interface.
         self.logic = DeepLearnerLogic()
 
         # Connections
@@ -105,14 +128,14 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
         # (in the selected parameter node).
-        self.ui.TrainDirLineEdit.textChanged.connect(self.updateParameterNodeFromGUI)
+        self.InputDirLineEdit.textChanged.connect(self.updateParameterNodeFromGUI)
         self.ui.epochSpinBox.valueChanged.connect(self.updateParameterNodeFromGUI)
         self.ui.gPUCheckBox.connect("toggled(bool)", self.updateParameterNodeFromGUI)
         self.ui.batchSizeSpinBox.valueChanged.connect(self.updateParameterNodeFromGUI)
         self.ui.learningRateSpinBox.valueChanged.connect(self.updateParameterNodeFromGUI)
 
         # Buttons
-        self.ui.TrainDirPushButton.connect('clicked(bool)', self.populateTrainDirectory)
+        self.InputDirPushButton.connect('clicked(bool)', self.populateTrainDirectory)
         self.ui.StartTrain.connect('clicked(bool)', self.onApplyButton)
         self.ui.showLogPushButton.connect('clicked(bool)', self.showTBLog)
         # Model radio buttons
@@ -252,7 +275,7 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             logging.debug("onDirectoryChanged: {}".format(directoryPath))
             if mode == "train":
                 self.trainDir = directoryPath[0]
-                self.ui.TrainDirLineEdit.text = directoryPath[0]
+                self.InputDirLineEdit.text = directoryPath[0]
                 feat_set = set()
                 timepoints = set()
                 counter = {}
@@ -272,10 +295,13 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                             else:
                                 counter[f"{tp}_{feat}"] = 1
                 for f in feat_set:
-                    self.ui.FeatureNameCombo.addItem(f)
+                    self.modalityComboBox.addItem(f)
                 for tp in timepoints:
-                    self.ui.TimePointCombo.addItem(tp)
+                    self.sessionComboBox.addItem(tp)
                 self.counter = counter
+
+    def processInputText(self, text):
+        return text.split(":")[1].strip().split(",")
 
     def populateTrainDirectory(self):
         self.populateInputDirectory("train")
@@ -293,21 +319,25 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         else:
             self.model = "cnn"
 
+    # def processInputFields(self, text):
+    #
     def populateDataDirectory(self):
-        DEFAULT_FILE_PATHS["TRAIN_DATA_DIR"] = self.ui.TrainDirLineEdit.text
-        DEFAULT_FILE_PATHS["FEATURE_DIRS"] = [self.ui.FeatureNameCombo.currentText]
-        DEFAULT_FILE_PATHS["TIME_POINTS"] = [self.ui.TimePointCombo.currentText]
-        self.ui.msg = qt.QMessageBox()
-        self.ui.msg.setIcon(qt.QMessageBox.Information)
-        total_samples = self.counter[f"{self.ui.TimePointCombo.currentText}_{self.ui.FeatureNameCombo.currentText}"]
-        self.ui.msg.setText(f"{total_samples} training samples available for session: "
-                    f"{self.ui.TimePointCombo.currentText}, modality: {self.ui.FeatureNameCombo.currentText}")
-        self.ui.msg.setWindowTitle("Number of data samples")
-        self.ui.msg.setInformativeText("Is it enough for training?")
-        self.ui.msg.setStandardButtons(qt.QMessageBox.Yes | qt.QMessageBox.No)
-        self.ui.msg.setDefaultButton(qt.QMessageBox.Yes)
-        ret = self.ui.msg.exec()
-        return DEFAULT_FILE_PATHS, ret == qt.QMessageBox.Yes
+        DEFAULT_FILE_PATHS["TRAIN_DATA_DIR"] = self.InputDirLineEdit.text
+        DEFAULT_FILE_PATHS["FEATURE_DIRS"] = self.processInputText(self.modalityComboBox.currentText)
+        DEFAULT_FILE_PATHS["TIME_POINTS"] = self.processInputText(self.sessionComboBox.currentText)
+        print(DEFAULT_FILE_PATHS)
+        # self.ui.msg = qt.QMessageBox()
+        # self.ui.msg.setIcon(qt.QMessageBox.Information)
+        # total_samples = self.counter[f"{self.ui.TimePointCombo.currentText}_{self.ui.FeatureNameCombo.currentText}"]
+        # self.ui.msg.setText(f"{total_samples} training samples available for session: "
+        #             f"{self.ui.TimePointCombo.currentText}, modality: {self.ui.FeatureNameCombo.currentText}")
+        # self.ui.msg.setWindowTitle("Number of data samples")
+        # self.ui.msg.setInformativeText("Is it enough for training?")
+        # self.ui.msg.setStandardButtons(qt.QMessageBox.Yes | qt.QMessageBox.No)
+        # self.ui.msg.setDefaultButton(qt.QMessageBox.Yes)
+        # ret = self.ui.msg.exec()
+        return DEFAULT_FILE_PATHS, True
+        # return DEFAULT_FILE_PATHS, ret == qt.QMessageBox.Yes
 
     def checkOutputDirectory(self):
         """
@@ -339,7 +369,7 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 print("-" * 47)
                 # Disable training buttons
                 self.ui.StartTrain.enabled = False
-                self.ui.TrainDirPushButton.enabled = False
+                self.InputDirPushButton.enabled = False
                 self.ui.trainingProgressBar.setValue(0)
                 self._asynchrony = Asynchrony(
                         lambda: self.logic.process(
@@ -520,7 +550,7 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
         cli_main(args)
         ui.trainingProgressBar.setValue(100)
         ui.StartTrain.enabled = True
-        ui.TrainDirPushButton.enabled = True
+        self.InputDirPushButton.enabled = True
         stopTime = time.time()
         logging.info('Processing completed in {0:.2f} seconds'.format(stopTime - startTime))
 
