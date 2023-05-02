@@ -1,3 +1,4 @@
+import logging
 import os.path
 import sys
 import slicer
@@ -38,7 +39,7 @@ except ImportError:
 
 
 import torch.nn
-from monai.networks.nets import EfficientNetBN, DenseNet121, DenseNet
+from monai.networks.nets import EfficientNetBN, DenseNet121, DenseNet, SEResNet50
 
 from DeepLearnerLib.models.cnn_model import SimpleCNN
 from DeepLearnerLib.pl_modules.classifier_modules import ImageClassifier
@@ -82,7 +83,7 @@ def cli_main(args):
         backbone = EfficientNetBN(
             model_name="efficientnet-b0",
             in_channels=args["in_channels"],
-            pretrained=False,
+            pretrained=True,
             num_classes=2
         )
     elif args["model"] == "densenet":
@@ -91,10 +92,16 @@ def cli_main(args):
             in_channels=args["in_channels"],
             out_channels=2
         )
+    elif args["model"] == "resnet":
+        backbone = SEResNet50(
+            spatial_dims=2,
+            in_channels=args["in_channels"],
+            num_classes=2,
+            pretrained=True
+        )
     else:
         backbone = SimpleCNN()
     device = "cuda:0" if torch.cuda.is_available() and args["use_gpu"] else "cpu"
-    print(f"Using device: {device}")
     model = ImageClassifier(backbone, learning_rate=args["learning_rate"],
                             criterion=torch.nn.CrossEntropyLoss(weight=torch.FloatTensor([1.0, 5.0])),
                             device=device,
@@ -149,5 +156,8 @@ def cli_main(args):
                              logger=logger,
                              callbacks=[progressBar, checkpointer, es])
         trainer.fit(model, datamodule=data_modules[i])
+        saved_name = os.path.join(args["write_dir"], "logs", args["model"], "fold_" + str(i), "model.pt")
+        logging.info(f"Saving model: {saved_name}")
+        torch.save(model.backbone, saved_name)
         model.apply(weight_reset)
         Asynchrony.RunOnMainThread(lambda: setProgressBar(args["qtProgressBarObject"], 0.0))
