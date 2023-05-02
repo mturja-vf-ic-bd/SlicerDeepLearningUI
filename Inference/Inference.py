@@ -45,9 +45,9 @@ class Inference(ScriptedLoadableModule):
 
     def __init__(self, parent):
         ScriptedLoadableModule.__init__(self, parent)
-        self.parent.title = "Inference"
+        self.parent.title = "PlaneCNN"
         self.parent.categories = [
-            "Deep Learning"]
+            "SurfaceLearner"]
         self.parent.dependencies = []
         self.parent.contributors = [
             "Md Asadullah Turja (UNC Chapel Hill)"]
