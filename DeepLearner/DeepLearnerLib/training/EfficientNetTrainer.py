@@ -103,7 +103,7 @@ def cli_main(args):
         backbone = SimpleCNN()
     device = "cuda:0" if torch.cuda.is_available() and args["use_gpu"] else "cpu"
     model = ImageClassifier(backbone, learning_rate=args["learning_rate"],
-                            criterion=torch.nn.CrossEntropyLoss(weight=torch.FloatTensor([1.0, 5.0])),
+                            criterion=torch.nn.CrossEntropyLoss(weight=torch.FloatTensor([1.0, 1.0])),
                             device=device,
                             metrics=["acc", "precision", "recall"])
 
@@ -160,4 +160,5 @@ def cli_main(args):
         logging.info(f"Saving model: {saved_name}")
         torch.save(model.backbone, saved_name)
         model.apply(weight_reset)
-        Asynchrony.RunOnMainThread(lambda: setProgressBar(args["qtProgressBarObject"], 0.0))
+        if args["qtProgressBarObject"] is not None:
+            Asynchrony.RunOnMainThread(lambda: setProgressBar(args["qtProgressBarObject"], 0.0))

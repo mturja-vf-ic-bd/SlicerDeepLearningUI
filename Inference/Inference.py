@@ -383,6 +383,7 @@ class InferenceLogic(ScriptedLoadableModuleLogic):
         if os.path.isfile(model_path):
             self.n_fold = 1
             model = torch.load(model_path)
+            print(model)
             predictions = self.predict(model, data_loader, 0)
         else:
             # majority voting

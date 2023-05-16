@@ -431,9 +431,9 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """
         Starts tensorboard logging
         """
-        tb_dirs = os.path.join(self.ui.writeDirLineEdit.text, "logs", self.model, "fold_0")
+        tb_dirs = os.path.join(self.ui.writeDirLineEdit.text, "logs", self.model)
         tb = program.TensorBoard()
-        tb.configure(argv=[None, '--logdir', tb_dirs])
+        tb.configure(argv=[None, '--logdir', tb_dirs, '--port', self.ui.tbPortLineEdit.text])
         tb.launch()
         self.tb_log = tb
         return tb
