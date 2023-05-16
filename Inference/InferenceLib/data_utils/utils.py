@@ -39,9 +39,9 @@ def get_image_files_single_scalar(data_dir="TRAIN_DATA_DIR", FILE_PATHS=None):
             labels.append(1)
         count[group] += 1
         feat_tuple.append(os.path.join(sub_path, scalars, "left_" + scalars +
-                                       FILE_PATHS["FILE_SUFFIX"][0]) + ".jpeg")
+                                       FILE_PATHS["FILE_SUFFIX"][0]) + ".png")
         feat_tuple.append(os.path.join(sub_path, scalars, "right_" + scalars +
-                                       FILE_PATHS["FILE_SUFFIX"][0]) + ".jpeg")
+                                       FILE_PATHS["FILE_SUFFIX"][0]) + ".png")
         file_names.append(feat_tuple)
     print(count)
     return file_names, labels
