@@ -434,9 +434,18 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         tb_dirs = os.path.join(self.ui.writeDirLineEdit.text, "logs", self.model)
         tb = program.TensorBoard()
         tb.configure(argv=[None, '--logdir', tb_dirs, '--port', self.ui.tbPortLineEdit.text])
-        tb.launch()
-        self.tb_log = tb
-        return tb
+        try:
+            tb.launch()
+            self.tb_log = tb
+            return tb
+        except Exception as e:
+            if "port already in use" in str(e):
+                print(f"Error: Port "
+                      f"{self.ui.tbPortLineEdit.text} is already in use. "
+                      f"Please choose a different port.")
+                return
+            else:
+                raise
             
     def showTBLog(self):
         """
