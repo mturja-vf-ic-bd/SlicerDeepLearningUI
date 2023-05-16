@@ -172,11 +172,11 @@
     </widget>
    </item>
    <item>
-    <widget class="ctkCollapsibleButton" name="modelCollapsibleButton" native="true">
+    <widget class="ctkCollapsibleButton" name="AdvanceCollapsibleButton" native="true">
      <property name="text" stdset="0">
       <string>Advanced Options</string>
      </property>
-     <layout class="QVBoxLayout" name="AdvancedOptions">
+     <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
        <widget class="ctkCollapsibleButton" name="AdvanceCheckpointCollapsibleButton" native="true">
         <property name="text" stdset="0">
@@ -234,7 +234,7 @@
        </widget>
       </item>
       <item>
-       <widget class="ctkCollapsibleButton" name="AdvanceModelCollapsibleButton" native="true">
+       <widget class="ctkCollapsibleButton" name="AdvanceLogCollapsibleButton" native="true">
         <property name="text" stdset="0">
          <string>Logging</string>
         </property>
@@ -269,6 +269,29 @@
             </widget>
            </item>
           </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="ctkCollapsibleButton" name="AdvanceLossCollapsibleButton" native="true">
+        <property name="text" stdset="0">
+         <string>Loss</string>
+        </property>
+        <layout class="QFormLayout" name="formLayout_2">
+         <item row="1" column="0">
+          <widget class="QLabel" name="posWeightLabel">
+           <property name="text">
+            <string>Positive Class Weight</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="posWLineEdit">
+           <property name="text">
+            <string>1.0</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
