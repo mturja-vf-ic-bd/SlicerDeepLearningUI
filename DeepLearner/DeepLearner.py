@@ -4,6 +4,7 @@ import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 from pathlib import Path
+import webbrowser
 
 from DeepLearnerLib.CONSTANTS import DEFAULT_FILE_PATHS
 from DeepLearnerLib.Asynchrony import Asynchrony
@@ -434,10 +435,20 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         tb_dirs = os.path.join(self.ui.writeDirLineEdit.text, "logs", self.model)
         tb = program.TensorBoard()
         tb.configure(argv=[None, '--logdir', tb_dirs, '--port', self.ui.tbPortLineEdit.text])
-        tb.launch()
-        self.tb_log = tb
-        return tb
-            
+        try:
+            tb.launch()
+            self.tb_log = tb
+            return tb
+        except tensorboard.program.TensorBoardPortInUseError:
+            msg = qt.QMessageBox()
+            msg.setIcon(qt.QMessageBox.Information)
+            msg.setText("Port in use by a previous session "
+                        "which will be displayed!")
+            msg.exec()
+            logging.info("Port in use by a previous session "
+                         "which will be displayed!")
+            return self.tb_log
+
     def showTBLog(self):
         """
         Start tensorboard log web ui
@@ -448,10 +459,8 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         else:
             tb_url = ""
         tb_url += self.ui.tbAddressLineEdit.text + ":" + self.ui.tbPortLineEdit.text
-        print("Opening tb log: ", tb_url)
-        self.webWidget = slicer.qSlicerWebWidget()
-        self.webWidget.url = qt.QUrl(tb_url)
-        self.webWidget.show()
+        logging.info("Opening log in a browser: ", tb_url)
+        webbrowser.open(tb_url)
 
 
 #
