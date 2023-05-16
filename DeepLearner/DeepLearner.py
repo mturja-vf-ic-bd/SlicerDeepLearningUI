@@ -387,6 +387,7 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                                 cp_n_epoch=int(self.ui.cpFreqSpinBox.value),
                                 max_cp=int(self.ui.maxCpSpinBox.value),
                                 monitor=self.ui.monitorLineEdit.text,
+                                pos_weight=float(self.ui.posWLineEdit.text),
                                 file_paths=file_paths,
                                 ui=self.ui
                             )
@@ -507,6 +508,7 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
             cp_n_epoch=1,
             max_cp=-1,
             monitor="validation/valid_loss",
+            pos_weight=1.0,
             file_paths=None,
             ui=None
         ):
@@ -528,6 +530,7 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
         :param int cp_n_epoch: A new checkpoint will be saved every `cp_n_epoch`
         :param max_cp: The best `max_cp` checkpoints will be kept (Use -1 to keep them all).
         :param monitor: The value based on which the quality of checkpoint will be assessed. Possible values
+        :param pos_weight: The weight of the positive class in the loss function
         "train/train_loss", "validation/valid_loss", "train/acc", "validation/acc", "train/precision",
         "validation/precision", "train/recall", "validation/recall"
         :param file_paths: A dictionary containing relevant paths to training data. (Default: FILE_PATH object in CONSTANTS.py)
@@ -548,6 +551,7 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
             "cp_n_epoch": cp_n_epoch,
             "maxCp": max_cp,
             "monitor": monitor,
+            "pos_weight": pos_weight,
             "qtProgressBarObject": ui.trainingProgressBar,
             "file_paths": file_paths
         }
