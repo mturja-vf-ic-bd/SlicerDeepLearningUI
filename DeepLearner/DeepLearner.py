@@ -460,7 +460,7 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         else:
             tb_url = ""
         tb_url += self.ui.tbAddressLineEdit.text + ":" + self.ui.tbPortLineEdit.text
-        logging.info("Opening log in a browser: ", tb_url)
+        logging.info(f"Opening log in a browser: {tb_url}")
         webbrowser.open(tb_url)
 
 
