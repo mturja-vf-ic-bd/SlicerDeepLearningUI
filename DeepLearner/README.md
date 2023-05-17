@@ -1,7 +1,14 @@
 # SlicerDeepLearningUI
 ![deep learning module ui image](screenshot4.png)
-## Introduction
-This module enables the user to easily train complex deep learning models (such as ResNet, EfficientNet, CNN, etc.) without the need for any coding. Given that the training dataset is in a certain format (explained later), all the user has to do is input the data directory, select a model from a model pool and push the `Start Trainer` button. The rest will be taken care of by this extension. Advanced users can also use the training code without the interface as the interface is completely separate from the training code. It's also quite straightforward to add custom data loaders and models.
+## Overview
+This module offers a user-friendly approach to training sophisticated deep learning models (e.g., ResNet, EfficientNet, CNN, etc.) without requiring any coding. By following a specific data format (explained later), users simply need to provide the input data directory, select a model from the available pool, and click the "Start Trainer" button. Advanced options are available for controlling different training aspects, including checkpointing, cross-validation, loss function, tensorboard logging, and, hyperparameter tuning. Moreover, the module can also be utilized via the command-line interface (CLI) instead of the graphical user interface (GUI).
+
+Key Features:
+- Training complex deep learning models for 2D images without coding
+- Selection of popular image classification networks from a pre-defined pool
+- Advanced options for checkpointing, cross-validation, loss function, and hyperparameter tuning, etc
+- CLI usage for enhanced flexibility and automation
+
 ## How to use
 [![Youtube Link](youtube_thumbnail.png)]((https://www.youtube.com/watch?v=54EK092QdEE))
 ### Data preparation
