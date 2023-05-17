@@ -1,5 +1,5 @@
-# SlicerDeepLearningUI
-![deep learning module ui image](screenshot4.png)
+# PlaneCNN-Training
+![deep learning module ui image](Resources/Trainer1.png)
 ## Overview
 This module offers a user-friendly approach to training sophisticated deep learning models (e.g., ResNet, EfficientNet, CNN, etc.) without requiring any coding. By following a specific data format (explained later), users simply need to provide the input data directory, select a model from the available pool, and click the "Start Trainer" button. Advanced options are available for controlling different training aspects, including checkpointing, cross-validation, loss function, tensorboard logging, and, hyperparameter tuning. Moreover, the module can also be utilized via the command-line interface (CLI) instead of the graphical user interface (GUI).
 
@@ -9,8 +9,7 @@ Key Features:
 - Advanced options for checkpointing, cross-validation, loss function, and hyperparameter tuning, etc
 - CLI usage for enhanced flexibility and automation
 
-## How to use
-[![Youtube Link](youtube_thumbnail.png)]((https://www.youtube.com/watch?v=54EK092QdEE))
+## How To Use
 ### Data preparation
 For the module to work, the user has to organize the data in the following manner:
 ```
@@ -23,7 +22,6 @@ root_data_folder
 ```
 So for each subject, there can be data for multiple timestamps and multiple feature set. The user can choose to train the model for a particular timestamp and a particular feature set. For example, in the following example, each subject has features at two time points -- 6 months (V06) and 12 months (V12). For each of these time points the subject has 3 feature sets -- cortical thickness (thickness), surface area (sa), and, local ea-csf (eacsf). The jpeg images are 2D images for left and right hemisphere of the brain. The shape of the images must match across hemisphere and population.
 #### Example:
-![data organization demo](input_data_org.jpg)
 ### Output Directory
 The output of the training is saved in `Output Directory` folder specified by the user. The output folder is organized as follows:
 ```
