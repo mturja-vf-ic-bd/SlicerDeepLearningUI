@@ -15,6 +15,7 @@ from monai.transforms import (
     RandRotate,
     RandZoom,
     ScaleIntensity,
+    NormalizeIntensity,
     EnsureType,
 )
 
@@ -39,7 +40,7 @@ class GeomCnnDataModule(pl.LightningDataModule):
             [
                 LoadImage(image_only=True),
                 AddChannel(),
-                ScaleIntensity(),
+                NormalizeIntensity(),
                 RandRotate(range_x=np.pi / 12, prob=0.5, keep_size=True),
                 RandFlip(spatial_axis=0, prob=0.5),
                 RandZoom(min_zoom=0.9, max_zoom=1.1, prob=0.5),
@@ -47,10 +48,10 @@ class GeomCnnDataModule(pl.LightningDataModule):
             ]
         )
         self.val_transforms = Compose(
-            [LoadImage(image_only=True), AddChannel(), ScaleIntensity(), EnsureType()]
+            [LoadImage(image_only=True), AddChannel(), NormalizeIntensity(), EnsureType()]
         )
         self.test_transform = Compose(
-                [LoadImage(image_only=True), AddChannel(), ScaleIntensity(), EnsureType()]
+                [LoadImage(image_only=True), AddChannel(), NormalizeIntensity(), EnsureType()]
             )
         self.data_tuple = data_tuple
         self.save_hyperparameters()
