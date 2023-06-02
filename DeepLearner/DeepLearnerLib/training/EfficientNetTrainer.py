@@ -1,6 +1,7 @@
 import logging
 import os.path
-import sys
+from argparse import ArgumentParser
+
 import slicer
 
 from DeepLearnerLib.Asynchrony import Asynchrony
@@ -162,3 +163,26 @@ def cli_main(args):
         model.apply(weight_reset)
         if args["qtProgressBarObject"] is not None:
             Asynchrony.RunOnMainThread(lambda: setProgressBar(args["qtProgressBarObject"], 0.0))
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument('--batch_size', default=32, type=int)
+    parser.add_argument('--learning_rate', type=float, default=0.0001)
+    parser.add_argument('--in_channels', type=int, default=2)
+    parser.add_argument('--num_classes', type=int, default=2)
+    parser.add_argument('--max_epoch', type=int, default=1)
+    parser.add_argument('--data_workers', type=int, default=4)
+    parser.add_argument('--model', type=str, default="simple_cnn")
+    parser.add_argument('--use_gpu', type=bool, default=True)
+    parser.add_argument('--n_folds', type=int, default=5)
+    parser.add_argument('--write_dir', type=str, default="default_write_dir")
+    parser.add_argument('--exp_name', type=str, default="default_name")
+    parser.add_argument('--cp_n_epoch', type=int, default=1)
+    parser.add_argument('--maxCp', type=int, default=2)
+    parser.add_argument('--monitor', type=str, default="validation/valid_loss")
+    parser.add_argument('--pos_weight', type=float, default=1.0)
+
+    args = vars(parser.parse_args())
+    args["qtProgressBarObject"] = None
+    cli_main(args)
