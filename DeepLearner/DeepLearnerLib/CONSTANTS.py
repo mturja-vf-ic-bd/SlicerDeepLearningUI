@@ -8,7 +8,8 @@ DEFAULT_FILE_PATHS = {
     "TEST_DATA_DIR": f"/{PREFIX}/mturja/IBIS_simulated_test",
     "FEATURE_DIRS": ["eacsf"],
     "FILE_SUFFIX": ["_flat", "_flat"],
-    "TIME_POINTS": ["V06"]
+    "TIME_POINTS": ["V06"],
+    "FILE_EXT": ".png"
 }
 
 # HYPERPARAMERS = {
