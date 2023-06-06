@@ -14,36 +14,30 @@ def get_image_files_single_scalar(data_dir="TRAIN_DATA_DIR", FILE_PATHS=None):
     if FILE_PATHS is None:
         FILE_PATHS = DEFAULT_FILE_PATHS
     subject_ids = sorted(os.listdir(FILE_PATHS[data_dir]))
-    scalars = FILE_PATHS["FEATURE_DIRS"][0]
-    time_points = FILE_PATHS["TIME_POINTS"][0]
-    attr = get_attributes(FILE_PATHS)
-    count = {"HR-neg": 0, "HR-ASD": 1}
+    scalars = FILE_PATHS["FEATURE_DIRS"]
+    time_points = FILE_PATHS["TIME_POINTS"]
+    attr = get_attributes(FILE_PATHS, data_dir)
     for sub in subject_ids:
+        print(f"Processing subject: {sub}")
+        if not os.path.isdir(os.path.join(FILE_PATHS[data_dir], sub)):
+            continue
         feat_tuple = []
-        sub_path = os.path.join(FILE_PATHS[data_dir], sub, time_points)
-        if not os.path.isdir(sub_path) or not os.path.isdir(os.path.join(sub_path, scalars)):
-            continue
-        n_feat = [os.path.join(sub_path, f) for f in os.listdir(sub_path)
-                  if os.path.isdir(os.path.join(sub_path, f))]
-        if len(n_feat) == 0:
-            continue
+        sub_paths = [os.path.join(FILE_PATHS[data_dir], sub, t) for t in time_points]
         sub_attr = attr.loc[attr["CandID"] == int(sub)]
         if sub_attr.size == 0:
             continue
-        group = sub_attr["group"].values[0]
-        if "LR" in group:
-            continue
-        elif group == "HR-neg":
-            labels.append(0)
-        else:
-            labels.append(1)
-        count[group] += 1
-        feat_tuple.append(os.path.join(sub_path, scalars, "left_" + scalars +
-                                       FILE_PATHS["FILE_SUFFIX"][0]) + ".png")
-        feat_tuple.append(os.path.join(sub_path, scalars, "right_" + scalars +
-                                       FILE_PATHS["FILE_SUFFIX"][0]) + ".png")
-        file_names.append(feat_tuple)
-    print(count)
+        group = int(sub_attr["group"].values[0])
+        labels.append(group)
+        for sub_path in sub_paths:
+            if not os.path.isdir(sub_path):
+                continue
+            for s in scalars:
+                feat_tuple.append(os.path.join(sub_path, s, "left_" + s +
+                                               FILE_PATHS["FILE_SUFFIX"][0]) + FILE_PATHS["FILE_EXT"])
+                feat_tuple.append(os.path.join(sub_path, s, "right_" + s +
+                                               FILE_PATHS["FILE_SUFFIX"][1]) + FILE_PATHS["FILE_EXT"])
+                file_names.append(feat_tuple)
+                print(file_names)
     return file_names, labels
 
 
@@ -59,8 +53,8 @@ def get_test_dataloader():
     return torch.utils.data.DataLoader(_ds, batch_size=100)
 
 
-def get_attributes(FILE_PATHS):
-    file_path = os.path.join(FILE_PATHS["TRAIN_DATA_DIR"], "DX_and_Dem.csv")
+def get_attributes(FILE_PATHS, data_dir="TRAIN_DATA_DIR"):
+    file_path = os.path.join(FILE_PATHS[data_dir], "DX_and_Dem.csv")
     attr = pd.read_csv(open(file_path))
     return attr
 

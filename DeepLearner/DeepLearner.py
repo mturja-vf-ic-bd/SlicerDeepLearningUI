@@ -302,7 +302,9 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 self.counter = counter
 
     def processInputText(self, text):
-        return text.split(":")[1].strip().split(",")
+        text_lst = text.split(":")[1].strip().split(",")
+        text_lst = [t.strip() for t in text_lst]
+        return text_lst
 
     def populateTrainDirectory(self):
         self.populateInputDirectory("train")
@@ -374,7 +376,7 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 self.ui.trainingProgressBar.setValue(0)
                 self._asynchrony = Asynchrony(
                         lambda: self.logic.process(
-                                in_channels=2,
+                                in_channels=len(DEFAULT_FILE_PATHS["FEATURE_DIRS"]),
                                 num_classes=2,
                                 model_name=self.model,
                                 batch_size=int(self.ui.batchSizeSpinBox.value),

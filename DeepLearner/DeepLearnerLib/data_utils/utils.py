@@ -15,35 +15,36 @@ def get_image_files_single_scalar(data_dir="TRAIN_DATA_DIR", FILE_PATHS=None):
     if FILE_PATHS is None:
         FILE_PATHS = DEFAULT_FILE_PATHS
     subject_ids = sorted(os.listdir(FILE_PATHS[data_dir]))
-    scalars = FILE_PATHS["FEATURE_DIRS"][0]
-    time_points = FILE_PATHS["TIME_POINTS"][0]
+    scalars = FILE_PATHS["FEATURE_DIRS"]
+    time_points = FILE_PATHS["TIME_POINTS"]
     attr = get_attributes(FILE_PATHS)
-    count = {"HR-neg": 0, "HR-ASD": 1}
+    print(attr.head())
+    count = {0: 0, 1: 1}
+    print(subject_ids)
     for sub in subject_ids:
+        if not os.path.isdir(os.path.join(FILE_PATHS[data_dir], sub)):
+            continue
         feat_tuple = []
-        sub_path = os.path.join(FILE_PATHS[data_dir], sub, time_points)
-        if not os.path.isdir(sub_path) or not os.path.isdir(os.path.join(sub_path, scalars)):
-            continue
-        n_feat = [os.path.join(sub_path, f) for f in os.listdir(sub_path)
-                  if os.path.isdir(os.path.join(sub_path, f))]
-        if len(n_feat) == 0:
-            continue
+        sub_paths = [os.path.join(FILE_PATHS[data_dir], sub, t) for t in time_points]
         sub_attr = attr.loc[attr["CandID"] == int(sub)]
         if sub_attr.size == 0:
             continue
-        group = sub_attr["group"].values[0]
-        if "LR" in group:
-            continue
-        elif group == "HR-neg":
-            labels.append(0)
-        else:
-            labels.append(1)
+        group = int(sub_attr["group"].values[0])
+        labels.append(group)
         count[group] += 1
-        feat_tuple.append(os.path.join(sub_path, scalars, "left_" + scalars +
-                                       FILE_PATHS["FILE_SUFFIX"][0]) + FILE_PATHS["FILE_EXT"])
-        feat_tuple.append(os.path.join(sub_path, scalars, "right_" + scalars +
-                                       FILE_PATHS["FILE_SUFFIX"][0]) + FILE_PATHS["FILE_EXT"])
-        file_names.append(feat_tuple)
+        for sub_path in sub_paths:
+            if not os.path.isdir(sub_path):
+                continue
+            n_feat = [os.path.join(sub_path, f) for f in scalars
+                      if os.path.isdir(os.path.join(sub_path, f))]
+            if len(n_feat) == 0:
+                continue
+            for s in scalars:
+                feat_tuple.append(os.path.join(sub_path, s, "left_" + s +
+                                               FILE_PATHS["FILE_SUFFIX"][0]) + FILE_PATHS["FILE_EXT"])
+                feat_tuple.append(os.path.join(sub_path, s, "right_" + s +
+                                               FILE_PATHS["FILE_SUFFIX"][1]) + FILE_PATHS["FILE_EXT"])
+                file_names.append(feat_tuple)
     print(count)
     return file_names, labels
 
