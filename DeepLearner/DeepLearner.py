@@ -329,18 +329,7 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         DEFAULT_FILE_PATHS["FEATURE_DIRS"] = self.processInputText(self.modalityComboBox.currentText)
         DEFAULT_FILE_PATHS["TIME_POINTS"] = self.processInputText(self.sessionComboBox.currentText)
         print(DEFAULT_FILE_PATHS)
-        # self.ui.msg = qt.QMessageBox()
-        # self.ui.msg.setIcon(qt.QMessageBox.Information)
-        # total_samples = self.counter[f"{self.ui.TimePointCombo.currentText}_{self.ui.FeatureNameCombo.currentText}"]
-        # self.ui.msg.setText(f"{total_samples} training samples available for session: "
-        #             f"{self.ui.TimePointCombo.currentText}, modality: {self.ui.FeatureNameCombo.currentText}")
-        # self.ui.msg.setWindowTitle("Number of data samples")
-        # self.ui.msg.setInformativeText("Is it enough for training?")
-        # self.ui.msg.setStandardButtons(qt.QMessageBox.Yes | qt.QMessageBox.No)
-        # self.ui.msg.setDefaultButton(qt.QMessageBox.Yes)
-        # ret = self.ui.msg.exec()
         return DEFAULT_FILE_PATHS, True
-        # return DEFAULT_FILE_PATHS, ret == qt.QMessageBox.Yes
 
     def checkOutputDirectory(self):
         """
@@ -374,9 +363,10 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 self.ui.StartTrain.enabled = False
                 self.InputDirPushButton.enabled = False
                 self.ui.trainingProgressBar.setValue(0)
+                feat_dim = len(DEFAULT_FILE_PATHS["FEATURE_DIRS"]) * len(DEFAULT_FILE_PATHS["TIME_POINTS"]) * 2
                 self._asynchrony = Asynchrony(
                         lambda: self.logic.process(
-                                in_channels=len(DEFAULT_FILE_PATHS["FEATURE_DIRS"]),
+                                in_channels=feat_dim,
                                 num_classes=2,
                                 model_name=self.model,
                                 batch_size=int(self.ui.batchSizeSpinBox.value),

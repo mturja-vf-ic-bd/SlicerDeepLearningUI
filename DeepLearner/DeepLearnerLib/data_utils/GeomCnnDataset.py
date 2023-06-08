@@ -70,6 +70,7 @@ class GeomCnnDataModule(pl.LightningDataModule):
                     train_test_split(train_files, train_labels,
                                      test_size=self.val_frac, shuffle=True,
                                      stratify=train_labels, random_state=42)
+                print(train_x)
                 self.train_ds = GeomCnnDataset(train_x, train_y, self.train_transforms)
                 self.val_ds = GeomCnnDataset(val_x, val_y, self.val_transforms)
                 logging.info(f"Training samples: {len(train_y)}, Validation samples: {len(val_y)}")

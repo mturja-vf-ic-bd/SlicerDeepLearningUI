@@ -38,6 +38,7 @@ class SimpleCNN(nn.Module):
         )
 
     def forward(self, x):
+        print(f"Input shape: {x.shape}")
         out = self.mxpool(self.conv1(x))
         out = self.mxpool(self.conv2(out))
         out = self.mxpool(self.conv3(out))
