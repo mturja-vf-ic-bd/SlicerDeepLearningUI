@@ -17,6 +17,7 @@ def get_image_files_single_scalar(data_dir="TRAIN_DATA_DIR", FILE_PATHS=None):
     scalars = FILE_PATHS["FEATURE_DIRS"]
     time_points = FILE_PATHS["TIME_POINTS"]
     attr = get_attributes(FILE_PATHS, data_dir)
+    print(attr.head())
     for sub in subject_ids:
         print(f"Processing subject: {sub}")
         if not os.path.isdir(os.path.join(FILE_PATHS[data_dir], sub)):
@@ -36,8 +37,7 @@ def get_image_files_single_scalar(data_dir="TRAIN_DATA_DIR", FILE_PATHS=None):
                                                FILE_PATHS["FILE_SUFFIX"][0]) + FILE_PATHS["FILE_EXT"])
                 feat_tuple.append(os.path.join(sub_path, s, "right_" + s +
                                                FILE_PATHS["FILE_SUFFIX"][1]) + FILE_PATHS["FILE_EXT"])
-                file_names.append(feat_tuple)
-                print(file_names)
+        file_names.append(feat_tuple)
     return file_names, labels
 
 
