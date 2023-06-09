@@ -22,6 +22,7 @@ from monai.transforms import (
 from DeepLearnerLib.data_utils.utils import get_image_files_single_scalar
 from DeepLearnerLib.data_utils.CustomDataset import GeomCnnDataset
 from sklearn.model_selection import train_test_split
+from PIL import Image
 
 
 class GeomCnnDataModule(pl.LightningDataModule):
@@ -32,6 +33,7 @@ class GeomCnnDataModule(pl.LightningDataModule):
                  data_tuple=None,
                  file_paths=None):
         super(GeomCnnDataModule, self).__init__()
+        self.w = None
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.val_frac = val_frac
@@ -70,7 +72,6 @@ class GeomCnnDataModule(pl.LightningDataModule):
                     train_test_split(train_files, train_labels,
                                      test_size=self.val_frac, shuffle=True,
                                      stratify=train_labels, random_state=42)
-                print(train_x)
                 self.train_ds = GeomCnnDataset(train_x, train_y, self.train_transforms)
                 self.val_ds = GeomCnnDataset(val_x, val_y, self.val_transforms)
                 logging.info(f"Training samples: {len(train_y)}, Validation samples: {len(val_y)}")

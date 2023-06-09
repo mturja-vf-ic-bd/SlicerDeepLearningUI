@@ -5,7 +5,7 @@ from monai.networks.blocks import Convolution
 
 
 class SimpleCNN(nn.Module):
-    def __init__(self, in_channels=2, dropout=0.05, n_classes=2):
+    def __init__(self, in_channels=2, dropout=0.05, n_classes=2, w=512):
         super(SimpleCNN, self).__init__()
         self.conv1 = Convolution(
             spatial_dims=2,
@@ -30,7 +30,7 @@ class SimpleCNN(nn.Module):
         )
         self.mxpool = nn.MaxPool2d(4)
         self.out_head = nn.Sequential(
-            nn.Linear(1024, 64),
+            nn.Linear(w//64 * w//64 * 16, 64),
             nn.PReLU(),
             nn.Linear(64, 64),
             nn.PReLU(),
@@ -38,7 +38,6 @@ class SimpleCNN(nn.Module):
         )
 
     def forward(self, x):
-        print(f"Input shape: {x.shape}")
         out = self.mxpool(self.conv1(x))
         out = self.mxpool(self.conv2(out))
         out = self.mxpool(self.conv3(out))

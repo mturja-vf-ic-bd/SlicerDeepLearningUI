@@ -13,7 +13,5 @@ class GeomCnnDataset(torch.utils.data.Dataset):
         return len(self.image_files)
 
     def __getitem__(self, idx):
-        print(f"Loading data ...")
         input = np.concatenate(self.transforms(self.image_files[idx]), axis=0)
-        print(f"Loaded !!!")
         return input, self.labels[idx]

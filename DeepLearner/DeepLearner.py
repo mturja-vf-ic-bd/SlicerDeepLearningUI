@@ -1,3 +1,4 @@
+import glob
 import os
 import logging
 import vtk, qt, ctk, slicer
@@ -5,6 +6,7 @@ from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 from pathlib import Path
 import webbrowser
+from PIL import Image
 
 from DeepLearnerLib.CONSTANTS import DEFAULT_FILE_PATHS
 from DeepLearnerLib.Asynchrony import Asynchrony
@@ -59,6 +61,7 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.counter = None
         self.webWidget = None
         self.tb_log = None
+        self.w = None
         self._asynchrony = None
         self._finishCallback = None
         self._running = False
@@ -295,6 +298,9 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                                 counter[f"{tp}_{feat}"] += 1
                             else:
                                 counter[f"{tp}_{feat}"] = 1
+                            if self.w is None:
+                                rep_file = glob.glob(os.path.join(self.trainDir, sub, tp, feat, "*.png"))[0]
+                                self.w = Image.open(rep_file).size
                 for f in feat_set:
                     self.modalityComboBox.addItem(f)
                 for tp in timepoints:
@@ -381,7 +387,8 @@ class DeepLearnerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                                 monitor=self.ui.monitorLineEdit.text,
                                 pos_weight=float(self.ui.posWLineEdit.text),
                                 file_paths=file_paths,
-                                ui=self.ui
+                                ui=self.ui,
+                                w=self.w
                             )
                 )
                 self._asynchrony.Start()
@@ -502,7 +509,8 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
             monitor="validation/valid_loss",
             pos_weight=1.0,
             file_paths=None,
-            ui=None
+            ui=None,
+            w=None
         ):
         """
         Run the processing algorithm.
@@ -527,6 +535,7 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
         "validation/precision", "train/recall", "validation/recall"
         :param file_paths: A dictionary containing relevant paths to training data. (Default: FILE_PATH object in CONSTANTS.py)
         :param ui: The UI object
+        :param w: image size
         """
         args = {
             "batch_size": batch_size,
@@ -545,7 +554,8 @@ class DeepLearnerLogic(ScriptedLoadableModuleLogic):
             "monitor": monitor,
             "pos_weight": pos_weight,
             "qtProgressBarObject": ui.trainingProgressBar,
-            "file_paths": file_paths
+            "file_paths": file_paths,
+            "w": w
         }
         import time
         from DeepLearnerLib.training.EfficientNetTrainer import cli_main
