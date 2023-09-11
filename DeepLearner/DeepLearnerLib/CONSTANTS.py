@@ -9,7 +9,8 @@ DEFAULT_FILE_PATHS = {
     "FEATURE_DIRS": ["eacsf"],
     "FILE_SUFFIX": ["_flat", "_flat"],
     "TIME_POINTS": ["V06"],
-    "FILE_EXT": ".png"
+    "FILE_EXT": ".png",
+    "IMAGE_SIZE": 128
 }
 
 # HYPERPARAMERS = {

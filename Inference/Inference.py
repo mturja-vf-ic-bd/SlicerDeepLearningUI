@@ -3,6 +3,8 @@ import pathlib
 import unittest
 import logging
 
+from CheckableComboBox import CheckableComboBox
+
 try:
     import numpy as np
 except ImportError:
@@ -75,6 +77,7 @@ class InferenceWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """
         ScriptedLoadableModuleWidget.__init__(self, parent)
         VTKObservationMixin.__init__(self)  # needed for parameter node observation
+        self.counter = None
         self._finishCallback = None
         self._running = None
         self._asynchrony = None
@@ -84,6 +87,29 @@ class InferenceWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self._updatingGUIFromParameterNode = False
         self.testDir = None
 
+    def modifyUI(self):
+        self.connect_collapsible_button = ctk.ctkCollapsibleButton()
+        self.connect_collapsible_button.text = 'Input'
+        self.connect_form_layout = qt.QGridLayout(self.connect_collapsible_button)
+        ########## Collapsible Layout Widgets
+        self.TestDirLineEdit = qt.QLineEdit()
+        self.InputDirPushButton = qt.QPushButton("Load Training Data Directory")
+        self.modality_label = qt.QLabel('Modality')
+        self.modality_label.alignment = 'AlignLeft'
+        self.session_label = qt.QLabel('Session')
+        self.session_label.alignment = 'AlignLeft'
+        self.modalityComboBox = CheckableComboBox()
+        self.modalityComboBox.toolTip = "Modality Combo Box."
+        self.sessionComboBox = CheckableComboBox()
+        self.sessionComboBox.toolTip = "Session Combo Box"
+        self.connect_form_layout.addWidget(self.TestDirLineEdit, 0, 1)
+        self.connect_form_layout.addWidget(self.InputDirPushButton, 1, 1)
+        self.connect_form_layout.addWidget(self.modality_label, 2, 0)
+        self.connect_form_layout.addWidget(self.modalityComboBox, 2, 1)
+        self.connect_form_layout.addWidget(self.session_label, 3, 0)
+        self.connect_form_layout.addWidget(self.sessionComboBox, 3, 1)
+        return self.connect_collapsible_button
+
     def setup(self):
         """
         Called when the user opens the module the first time and the widget is initialized.
@@ -92,7 +118,9 @@ class InferenceWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         # Load widget from .ui file (created by Qt Designer).
         uiWidget = slicer.util.loadUI(self.resourcePath('UI/Inference.ui'))
+        input_widget = self.modifyUI()
         self.uiWidget = uiWidget
+        self.layout.addWidget(input_widget)
         self.layout.addWidget(uiWidget)
         self.ui = slicer.util.childWidgetVariables(uiWidget)
 
@@ -110,22 +138,23 @@ class InferenceWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
         # (in the selected parameter node).
         self.ui.predictPushButton.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
-        self.ui.TestDirPushButton.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+        self.InputDirPushButton.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
         self.ui.ModelDirPushButton.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
 
         # Buttons
         self.ui.predictPushButton.connect('clicked(bool)', self.onApplyButton)
-        self.ui.TestDirPushButton.connect('clicked(bool)', self.populateTestDirectory)
+        self.InputDirPushButton.connect('clicked(bool)', self.populateTestDirectory)
         self.ui.ModelDirPushButton.connect('clicked(bool)', self.populateModelDirectory)
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
 
     def populateDataDirectory(self):
-        DEFAULT_FILE_PATHS["TEST_DATA_DIR"] = self.ui.TestDirLineEdit.text
-        DEFAULT_FILE_PATHS["TRAIN_DATA_DIR"] = self.ui.TestDirLineEdit.text
-        DEFAULT_FILE_PATHS["FEATURE_DIRS"] = [self.ui.FeatureNameCombo.currentText]
-        DEFAULT_FILE_PATHS["TIME_POINTS"] = [self.ui.TimePointCombo.currentText]
+        DEFAULT_FILE_PATHS["TRAIN_DATA_DIR"] = self.TestDirLineEdit.text
+        DEFAULT_FILE_PATHS["TEST_DATA_DIR"] = self.TestDirLineEdit.text
+        DEFAULT_FILE_PATHS["FEATURE_DIRS"] = self.processInputText(self.modalityComboBox.currentText)
+        DEFAULT_FILE_PATHS["TIME_POINTS"] = self.processInputText(self.sessionComboBox.currentText)
+        print(DEFAULT_FILE_PATHS)
         return DEFAULT_FILE_PATHS
 
     def populateInputDirectory(self, type="model"):
@@ -141,9 +170,10 @@ class InferenceWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             logging.debug("onDirectoryChanged: {}".format(directoryPath))
             if type == "data":
                 self.testDir = directoryPath[0]
-                self.ui.TestDirLineEdit.text = directoryPath[0]
+                self.TestDirLineEdit.text = directoryPath[0]
                 feat_set = set()
                 timepoints = set()
+                counter = {}
                 for sub in os.listdir(self.testDir):
                     if not os.path.isdir(os.path.join(self.testDir, sub)):
                         continue
@@ -155,13 +185,23 @@ class InferenceWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                             if not os.path.isdir(os.path.join(self.testDir, sub, tp, feat)):
                                 continue
                             feat_set.add(feat)
+                            if f"{tp}_{feat}" in counter.keys():
+                                counter[f"{tp}_{feat}"] += 1
+                            else:
+                                counter[f"{tp}_{feat}"] = 1
                 for f in feat_set:
-                    self.ui.FeatureNameCombo.addItem(f)
+                    self.modalityComboBox.addItem(f)
                 for tp in timepoints:
-                    self.ui.TimePointCombo.addItem(tp)
+                    self.sessionComboBox.addItem(tp)
+                self.counter = counter
             elif type == "model":
                 self.modelDir = directoryPath[0]
                 self.ui.ModelDirLineEdit.text = directoryPath[0]
+
+    def processInputText(self, text):
+        text_lst = text.split(":")[1].strip().split(",")
+        text_lst = [t.strip() for t in text_lst]
+        return text_lst
 
     def populateTestDirectory(self):
         self.populateInputDirectory("data")
@@ -240,15 +280,17 @@ class InferenceWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     def constructWriteDirectory(self):
         baseWriteDir = self.ui.OutputDirectoryLineEdit.text
         print(f"Write dir: {baseWriteDir}")
+        delimiter = "_"
         if baseWriteDir.strip() == "" or baseWriteDir is None:
             return None
         else:
             save_path = os.path.join(
                 baseWriteDir,
-                self.ui.TimePointCombo.currentText,
-                self.ui.FeatureNameCombo.currentText
+                delimiter.join(self.processInputText(self.modalityComboBox.currentText)),
+                delimiter.join(self.processInputText(self.sessionComboBox.currentText))
             )
             pathlib.Path(save_path).mkdir(exist_ok=True, parents=True)
+            print(f"Output directory: ", save_path)
             return save_path
 
     def onApplyButton(self):

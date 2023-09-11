@@ -38,12 +38,17 @@ try:
 except ImportError:
     slicer.util.pip_install('scikit-learn==0.24.2')
 
+try:
+    import PIL
+except ImportError:
+    slicer.util.pip_install("Pillow==8.3.1")
 
 import torch.nn
 from monai.networks.nets import EfficientNetBN, DenseNet121, DenseNet, SEResNet50
 
 from DeepLearnerLib.models.cnn_model import SimpleCNN
 from DeepLearnerLib.pl_modules.classifier_modules import ImageClassifier
+from DeepLearnerLib.CONSTANTS import DEFAULT_FILE_PATHS
 from DeepLearnerLib.data_utils.GeomCnnDataset import GeomCnnDataModule, GeomCnnDataModuleKFold
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
@@ -75,11 +80,29 @@ class LitProgressBar(ProgressBarBase):
 
 
 def cli_main(args):
-    # pl.seed_everything(1234)
+    # -----------
+    # Data
+    # -----------
+    if args["n_folds"] == 1:
+        data_modules = [
+            GeomCnnDataModule(
+                batch_size=args["batch_size"],
+                num_workers=args["data_workers"],
+                file_paths=args["file_paths"]
+            )
+        ]
+    else:
+        data_module_generator = GeomCnnDataModuleKFold(
+            batch_size=args["batch_size"],
+            num_workers=args["data_workers"],
+            n_splits=args["n_folds"],
+            file_paths=args["file_paths"]
+        )
+        data_modules = data_module_generator.get_folds()
 
-    # ------------
-    # model
-    # ------------
+        # ------------
+        # model
+        # ------------
     if args["model"] == "eff_bn":
         backbone = EfficientNetBN(
             model_name="efficientnet-b0",
@@ -101,33 +124,16 @@ def cli_main(args):
             pretrained=True
         )
     else:
-        backbone = SimpleCNN()
+        backbone = SimpleCNN(
+            in_channels=args["in_channels"],
+            w=args["w"][0]
+        )
     device = "cuda:0" if torch.cuda.is_available() and args["use_gpu"] else "cpu"
     model = ImageClassifier(backbone, learning_rate=args["learning_rate"],
-                            criterion=torch.nn.CrossEntropyLoss(weight=torch.FloatTensor([1.0, args["pos_weight"]])),
-                            device=device,
-                            metrics=["acc", "precision", "recall"])
-
-    # -----------
-    # Data
-    # -----------
-    if args["n_folds"] == 1:
-        data_modules = [
-            GeomCnnDataModule(
-                batch_size=args["batch_size"],
-                num_workers=args["data_workers"],
-                file_paths=args["file_paths"]
-            )
-        ]
-
-    else:
-        data_module_generator = GeomCnnDataModuleKFold(
-            batch_size=args["batch_size"],
-            num_workers=args["data_workers"],
-            n_splits=args["n_folds"],
-            file_paths=args["file_paths"]
-        )
-        data_modules = data_module_generator.get_folds()
+                                criterion=torch.nn.CrossEntropyLoss(
+                                weight=torch.FloatTensor([1.0, args["pos_weight"]])),
+                                device=device,
+                                metrics=["acc", "precision", "recall"])
 
     for i in range(args["n_folds"]):
         # logger
